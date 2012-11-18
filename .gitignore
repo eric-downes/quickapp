@@ -1,2 +1,4 @@
 *.pyc
 *.egg-info
+.noseids
+compmake_storage
