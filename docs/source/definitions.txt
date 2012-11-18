@@ -1,0 +1,10 @@
+.. |QuickApp| raw:: html
+      
+      <span class="brand">QuickApp</span>
+
+
+.. |towrite| raw:: html
+
+     <span style="font-weight:bold">This section must still be written.</span>
+	 
+	 
