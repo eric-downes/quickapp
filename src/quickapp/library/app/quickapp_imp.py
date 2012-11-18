@@ -8,6 +8,9 @@ from reprep.report_utils import ReportManager
 import contracts
 import os
 import sys
+from .. import DecentParamsResults
+from .. import all_combinations
+from compmake.ui.ui import comp_prefix
 
 
 class QuickApp(QuickAppInterface):
@@ -51,27 +54,30 @@ class QuickApp(QuickAppInterface):
         app_params.populate_parser(group)
         parser.add_option_group(group)
         
-        options = main_params.parse_using_parser(parser, args)
-    
-        if not options.contracts:
+        x = main_params.parse_using_parser(parser, args)
+        options = DecentParamsResults(x[0], x[1], main_params.params)
+        
+        if not options['contracts']:
             msg = 'PyContracts disabled for speed. Use --contracts to activate.'
             self.logger.warning(msg)
             contracts.disable_all()
 
-        app_options = app_params.parse_using_parser(parser, args)    
-        
-        outdir = os.path.join(options.output)
-    
         # Compmake storage for results
+        outdir = os.path.join(options.output)
         storage = os.path.join(outdir, 'compmake')
+        reports = os.path.join(outdir, 'reports')
+        self._report_manager = ReportManager(reports)
         use_filesystem(storage)
         read_rc_files()
         
-        reports = os.path.join(outdir, 'reports')
-        self._output_dir = os.path.join(outdir, 'output')
-        self._report_manager = ReportManager(reports)
-        self._options = app_options 
-        self.define_jobs()
+        values, given = app_params.parse_using_parser(parser, args)
+
+        combs = {}
+        for params, choices in all_combinations(values, give_choices=True):
+            i = len(combs)
+            name = 'C%d' % i
+            combs[name] = dict(params=params, choices=choices, given=given)         
+        self.add_combs(outdir, combs, app_params)
         
         self._report_manager.create_index_job()
         
@@ -80,6 +86,26 @@ class QuickApp(QuickAppInterface):
         else:
             compmake_console()
             return 0
+
+    def add_combs(self, outdir, combs, app_params):
+        multiple = len(combs) > 1
+        for name, x in combs.items():
+            params = x['params']
+            choices = x['choices']
+            given = x['given']
+            if multiple:
+                self.logger.info('Config %s: %s' % (name, choices))
+                comp_prefix(name) 
+            self._options = DecentParamsResults(params, given, app_params.params)
+            self._current_params = params
+            
+            self._output_dir = os.path.join(outdir, 'output', name)
+            if not os.path.exists(self._output_dir):
+                os.makedirs(self._output_dir)
+
+            self.define_jobs()
+        if multiple:
+            comp_prefix()
     
     @staticmethod
     def choice(it):

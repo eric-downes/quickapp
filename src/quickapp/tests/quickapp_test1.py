@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from quickapp import QuickApp
 from reprep import Report
 import sys

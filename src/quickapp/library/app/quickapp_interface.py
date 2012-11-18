@@ -23,7 +23,11 @@ class QuickAppInterface(object):
     def get_output_dir(self):
         """ Returns a suitable output directory for data files """
         return self._output_dir
-    
+
+    def add_report(self, report, report_type=None):
+        rm = self.get_report_manager()
+        rm.add(report, report_type, **self._current_params)
+
     def get_report_manager(self):
         return self._report_manager
     
