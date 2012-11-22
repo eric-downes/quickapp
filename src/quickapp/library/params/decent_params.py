@@ -76,8 +76,8 @@ class DecentParams():
                 raise DecentParamsUserError(msg)
             
             if parsed[k] is not None:
-                given.add(k)
                 if parsed[k] != self.params[k].default:
+                    given.add(k)
                     values[k] = self.params[k].value_from_string(parsed[k])
                 else:
                     values[k] = self.params[k].default

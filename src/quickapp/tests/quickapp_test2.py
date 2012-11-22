@@ -21,15 +21,10 @@ class QuickAppDemo2(QuickApp):
         options = self.get_options()
         param1 = options.param1
         param2 = options.param2
-        
-        rm = self.get_report_manager()
-        
         samples = self.comp(actual_computation, param1=param1, param2=param2)
         
         rj = self.comp(report, param2, samples)
-
-        rm.add(rj, 'report', param1=param1, param2=param2)
-
+        self.add_report(rj, report)
         
 def compapp_test1():
     args = ['-o', 'quickapp_test1',

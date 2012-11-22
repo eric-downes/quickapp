@@ -1,7 +1,3 @@
-
-
-# __all__ = ['QuickApp']
-
 import reprep
 import compmake
 import contracts

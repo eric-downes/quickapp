@@ -1,16 +1,14 @@
 from . import QuickAppInterface
-from .. import Choice, logger as l, DecentParams
+from .. import (Choice, logger as l, DecentParams, DecentParamsResults,
+    all_combinations)
 from ...utils import CmdOptionParser, UserError, wrap_script_entry_point_noexit
 from compmake import (batch_command, compmake_console, read_rc_files,
-    use_filesystem)
+    use_filesystem, comp_prefix)
 from optparse import OptionGroup
 from reprep.report_utils import ReportManager
 import contracts
 import os
 import sys
-from .. import DecentParamsResults
-from .. import all_combinations
-from compmake.ui.ui import comp_prefix
 
 
 class QuickApp(QuickAppInterface):
@@ -27,7 +25,12 @@ class QuickApp(QuickAppInterface):
                                 exceptions_no_traceback=(UserError,),
                                 args=args)
             
-    def main2(self, args=None):
+    def main2(self, script_name=None, args=None):
+        if script_name is not None:
+            script_name = os.path.basename(sys.argv[0])
+        
+        default_output_dir = 'out-%s/' % script_name
+        
         if args is None:
             args = sys.argv[1:]
             
@@ -35,15 +38,18 @@ class QuickApp(QuickAppInterface):
         main_params.add_flag('contracts', help='Activate PyContracts')
         main_params.add_flag('profile', help='Use Python Profiler')
         main_params.add_string('output', short='o', help='Output directory',
-                               compulsory=True)
+                               default=default_output_dir)
     
+        main_params.add_flag('console', help='Use Compmake console')
+
         main_params.add_string('command', short='c',
-                      help="Command to pass to compmake for batch mode")
+                      help="Command to pass to compmake for batch mode",
+                      default='make')
 
         app_params = DecentParams()
         self.define_options(app_params)    
 
-        parser = CmdOptionParser(prog='prog', usage=None, args=None)
+        parser = CmdOptionParser(prog=script_name, usage=None, args=None)
         parser.disable_interspersed_args()
         group = OptionGroup(parser, "General QuickApp options", "")
         main_params.populate_parser(group)
@@ -62,15 +68,19 @@ class QuickApp(QuickAppInterface):
             self.logger.warning(msg)
             contracts.disable_all()
 
-        # Compmake storage for results
-        outdir = os.path.join(options.output)
+        values, given = app_params.parse_using_parser(parser, args)
+
+        run_name = create_conf_name(values, given)
+        self.logger.info('Configuration name: %r' % run_name)
+        outdir = os.path.join(options.output, run_name)
+        
+        # Compmake storage for results        
         storage = os.path.join(outdir, 'compmake')
         reports = os.path.join(outdir, 'reports')
         self._report_manager = ReportManager(reports)
         use_filesystem(storage)
         read_rc_files()
         
-        values, given = app_params.parse_using_parser(parser, args)
 
         combs = {}
         for params, choices in all_combinations(values, give_choices=True):
@@ -81,7 +91,7 @@ class QuickApp(QuickAppInterface):
         
         self._report_manager.create_index_job()
         
-        if options.given('command'):
+        if not options.console:
             return batch_command(options.command)
         else:
             compmake_console()
@@ -110,3 +120,21 @@ class QuickApp(QuickAppInterface):
     @staticmethod
     def choice(it):
         return Choice(it)
+
+
+def create_conf_name(values, given):
+    def make_short(a):
+        if isinstance(a, Choice):
+            s = ','.join([make_short(x) for x in a])
+        else:
+            s = str(a)
+        if '/' in s:
+            s = os.path.basename(s)
+            s = os.path.splitext(s)[0]
+            s = s.replace('.', '_')
+        s = s.replace(',', '_')
+        return s
+    return "-".join([make_short(values[x]) for x in sorted(given)])
+    
+    
+    
