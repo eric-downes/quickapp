@@ -1,7 +1,8 @@
 from . import (DecentParamFlag, DecentParam, DecentParamMultiple,
     DecentParamChoice, DecentParamsUserError, DecentParamsResults)
 from contracts import contract
-from optparse import OptionParser
+from argparse import ArgumentParser
+from quickapp.library.variations.variations import Choice
 
 __all__ = ['DecentParams']
 
@@ -63,11 +64,13 @@ class DecentParams():
         """ Returns a dictionary with all values of parameters,
             but possibly some values are Choice() instances,
             and an """
-        options, misc = parser.parse_args(args)
-        if misc:
-            msg = "Spurious arguments: %r" % misc
-            raise DecentParamsUserError(msg)
-        parsed = vars(options)
+        try:
+            res = parser.parse_args(args)
+        except SystemExit as e:
+            raise
+            # raise Exception(e)  # XXX
+
+        parsed = vars(res)
         values = dict()
         given = set()
         for k, v in self.params.items():
@@ -78,7 +81,20 @@ class DecentParams():
             if parsed[k] is not None:
                 if parsed[k] != self.params[k].default:
                     given.add(k)
-                    values[k] = self.params[k].value_from_string(parsed[k])
+                    if isinstance(self.params[k], DecentParamMultiple):
+                        if isinstance(parsed[k], list):
+                            values[k] = parsed[k]
+                        else:
+                            values[k] = [parsed[k]]
+                    else:
+                        if isinstance(parsed[k], list):
+                            if len(parsed[k]) > 1:
+                                values[k] = Choice(parsed[k])
+                            else:
+                                values[k] = parsed[k][0]
+                        else:
+                            values[k] = parsed[k]
+                    # values[k] = self.params[k].value_from_string(parsed[k])
                 else:
                     values[k] = self.params[k].default
             else:
@@ -91,8 +107,8 @@ class DecentParams():
             p.populate(option_container)
         
     def create_parser(self):
-        parser = OptionParser(usage=self.usage, prog=self.prog)
-        parser.disable_interspersed_args()
+        parser = ArgumentParser(usage=self.usage, prog=self.prog)
+        # parser.disable_interspersed_args()
         self.populate_parser(parser)
         return parser
             

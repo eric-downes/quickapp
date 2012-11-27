@@ -1,4 +1,4 @@
-from .. import Choice, comp_comb
+from .. import Choice, comp_comb, logger
 from abc import abstractmethod, ABCMeta
 from compmake import comp
 
@@ -26,6 +26,7 @@ class QuickAppInterface(object):
 
     def add_report(self, report, report_type=None):
         rm = self.get_report_manager()
+        logger.info('Add reports with params %s' % str(self._current_params))
         rm.add(report, report_type, **self._current_params)
 
     def get_report_manager(self):

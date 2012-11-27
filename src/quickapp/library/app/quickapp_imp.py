@@ -1,14 +1,15 @@
 from . import QuickAppInterface
 from .. import (Choice, logger as l, DecentParams, DecentParamsResults,
     all_combinations)
-from ...utils import CmdOptionParser, UserError, wrap_script_entry_point_noexit
+from ...utils import UserError, wrap_script_entry_point_noexit
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem, comp_prefix)
-from optparse import OptionGroup
 from reprep.report_utils import ReportManager
 import contracts
 import os
 import sys
+import argparse
+import hashlib
 
 
 class QuickApp(QuickAppInterface):
@@ -49,16 +50,12 @@ class QuickApp(QuickAppInterface):
         app_params = DecentParams()
         self.define_options(app_params)    
 
-        parser = CmdOptionParser(prog=script_name, usage=None, args=None)
-        parser.disable_interspersed_args()
-        group = OptionGroup(parser, "General QuickApp options", "")
-        main_params.populate_parser(group)
-        parser.add_option_group(group)
-        
-        group = OptionGroup(parser, "Application options",
-                    "Options for this applications")
-        app_params.populate_parser(group)
-        parser.add_option_group(group)
+        parser = argparse.ArgumentParser(prog=script_name)
+
+        group_quickapp = parser.add_argument_group('QuickApp arguments')
+        main_params.populate_parser(group_quickapp)
+        group_app = parser.add_argument_group('Application arguments')
+        app_params.populate_parser(group_app)
         
         x = main_params.parse_using_parser(parser, args)
         options = DecentParamsResults(x[0], x[1], main_params.params)
@@ -70,22 +67,23 @@ class QuickApp(QuickAppInterface):
 
         values, given = app_params.parse_using_parser(parser, args)
 
-        run_name = create_conf_name(values, given)
+        run_name = create_conf_name_digest(values, length=12)
         self.logger.info('Configuration name: %r' % run_name)
         outdir = os.path.join(options.output, run_name)
         
         # Compmake storage for results        
         storage = os.path.join(outdir, 'compmake')
         reports = os.path.join(outdir, 'reports')
-        self._report_manager = ReportManager(reports)
+        reports_index = os.path.join(outdir, 'reports.html')
+
+        self._report_manager = ReportManager(reports, reports_index)
         use_filesystem(storage)
         read_rc_files()
         
-
         combs = {}
         for params, choices in all_combinations(values, give_choices=True):
             i = len(combs)
-            name = 'C%d' % i
+            name = 'C%03d' % i
             combs[name] = dict(params=params, choices=choices, given=given)         
         self.add_combs(outdir, combs, app_params)
         
@@ -121,20 +119,37 @@ class QuickApp(QuickAppInterface):
     def choice(it):
         return Choice(it)
 
+def create_conf_name_digest(values, length=12):
+    """ Create an hash for the given values """
+    s = "-".join([str(values[x]) for x in sorted(values.keys())])
+    h = hashlib.sha224(s).hexdigest()
+    if len(h) > length:
+        h = h[:length]
+    return h
 
-def create_conf_name(values, given):
-    def make_short(a):
-        if isinstance(a, Choice):
-            s = ','.join([make_short(x) for x in a])
-        else:
-            s = str(a)
-        if '/' in s:
-            s = os.path.basename(s)
-            s = os.path.splitext(s)[0]
-            s = s.replace('.', '_')
-        s = s.replace(',', '_')
-        return s
-    return "-".join([make_short(values[x]) for x in sorted(given)])
+
+#
+# def create_conf_name(values, given, limit=32):
+#    cn = create_conf_name_values(values, given)
+#    if len(cn) > limit:
+#        cn = cn[:limit]  # TODO XXX
+#    return cn
+#    
     
-    
+#    
+# def create_conf_name_values(values, given):
+#    def make_short(a):
+#        if isinstance(a, Choice):
+#            s = ','.join([make_short(x) for x in a])
+#        else:
+#            s = str(a)
+#        if '/' in s:
+#            s = os.path.basename(s)
+#            s = os.path.splitext(s)[0]
+#            s = s.replace('.', '_')
+#        s = s.replace(',', '_')
+#        return s
+#    return "-".join([make_short(values[x]) for x in sorted(given)])
+#    
+#    
     

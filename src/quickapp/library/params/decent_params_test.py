@@ -18,8 +18,8 @@ class ParamsTest(unittest.TestCase):
         
         args = ['--vehicle', 'y',
                 '--float1', '1.2',
-                '--floats', '1.2,2.3',
-                '--ints', '1,2,3']
+                '--floats', '1.2' '2.3',
+                '--ints', '1', '2' '3']
         
         try:    
             res = p.parse_args(args)
@@ -27,14 +27,14 @@ class ParamsTest(unittest.TestCase):
             print e
             raise Exception(str(e))
         
-        assert res.given('floats') == True
-        assert res.given('int1') == False
-        assert res['ciao'] == '1'
-        assert res['ciao2'] == 1
-        assert res.ciao == '1'
-        assert res.ciao2 == 1
-        assert res.floats == [1.2, 2.3]
-        assert res.ints == [1, 2, 3]
+        self.assertEqual(res.given('floats'), True)
+        self.assertEqual(res.given('int1'), False)
+        self.assertEqual(res['ciao'], '1')
+        self.assertEqual(res['ciao2'], 1)
+        self.assertEqual(res.ciao, '1')
+        self.assertEqual(res.ciao2, 1)
+        self.assertEqual(res.floats, [1.2, 2.3])
+        self.assertEqual(res.ints, [1, 2, 3])
         
     @raises(ValueError)
     def decent_params_test2(self):

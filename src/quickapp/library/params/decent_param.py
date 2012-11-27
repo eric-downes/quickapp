@@ -29,7 +29,7 @@ class DecentParam():
     def value_from_string(self, s):
         """ Possibly returns Choice(options) """
         sep = ','
-        if sep in s:
+        if isinstance(s, str) and sep in s:
             return Choice([self.value_from_string(x) 
                            for x in s.split(sep)])
         
@@ -58,19 +58,21 @@ class DecentParam():
     def get_desc(self):
         desc = self.desc
         if self.compulsory:
-            desc = '*required* %s' % desc
+            desc = '[*required*] %s' % desc
         elif self.default is not None:
-            desc = '[default: %%default] %s' % desc 
+            desc = '[default: %8s] %s' % (self.default, desc) 
         return desc
     
     def populate(self, parser):
         option = '--%s' % self.name
-        other = dict(help=self.get_desc(), default=self.default)
+        other = dict(help=self.get_desc(), default=self.default,
+                     nargs='+')
+        other['type'] = self.ptype
         if self.short is not None:
             option1 = '-%s' % self.short
-            parser.add_option(option1, option, **other)
+            parser.add_argument(option1, option, **other)
         else:
-            parser.add_option(option, **other)
+            parser.add_argument(option, **other)
          
 
 class DecentParamsResults():
@@ -89,19 +91,7 @@ class DecentParamsResults():
     def given(self, name):
         return name in self._given
     
-#    def as_choices(self, which=None):
-#        if which is None:
-#            which = self._values.keys()
-#            
-#        from .. import Choice
-#        res = {}
-#        for k in which:
-#            v = self._values[k]
-#            if isinstance(self._params[k], DecentParamMultiple):
-#                v = Choice(v) 
-#            res[k] = v
-#        return res
-
+ 
 class DecentParamMultiple(DecentParam):
     """ Allow multiple values """    
     
@@ -128,12 +118,13 @@ class DecentParamMultiple(DecentParam):
 
     def populate(self, parser):
         option = '--%s' % self.name
-        parser.add_option(option, help=self.get_desc(), default=self.default)
+        parser.add_argument(option, nargs='+', type=self.ptype,
+                            help=self.get_desc(), default=self.default)
               
 class DecentParamFlag(DecentParam):
     def populate(self, parser):
         option = '--%s' % self.name
-        parser.add_option(option, help=self.desc, action='store_true')
+        parser.add_argument(option, help=self.desc, action='store_true')
       
         
 class DecentParamChoice(DecentParam):
