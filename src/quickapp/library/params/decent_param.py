@@ -122,9 +122,10 @@ class DecentParamMultiple(DecentParam):
                             help=self.get_desc(), default=self.default)
               
 class DecentParamFlag(DecentParam):
-    def populate(self, parser):
+    def populate(self, parser, default=False):
         option = '--%s' % self.name
-        parser.add_argument(option, help=self.desc, action='store_true')
+        parser.add_argument(option, help=self.desc, default=default,
+                            action='store_true')
       
         
 class DecentParamChoice(DecentParam):
