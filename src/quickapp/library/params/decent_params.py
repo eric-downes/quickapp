@@ -2,7 +2,7 @@ from . import (DecentParamFlag, DecentParam, DecentParamMultiple,
     DecentParamChoice, DecentParamsUserError, DecentParamsResults)
 from contracts import contract
 from argparse import ArgumentParser
-from quickapp.library.variations.variations import Choice
+from quickapp.library.variations import Choice
 
 __all__ = ['DecentParams']
 
@@ -52,8 +52,8 @@ class DecentParams():
     def add_string_choice(self, name, choices, **args):
         self._add(DecentParamChoice(name=name, choices=choices, ptype=str, **args))
     
-    def parse_args(self, args, allow_choice=True):
-        parser = self.create_parser()
+    def parse_args(self, args, allow_choice=True):  # TODO @UnusedVariable
+        parser = self.create_parser() 
         values, given = self.parse_using_parser(parser, args)
         # TODO: check no Choice()
         res = DecentParamsResults(values, given, self.params) 
@@ -66,9 +66,9 @@ class DecentParams():
             and an """
         try:
             res = parser.parse_args(args)
-        except SystemExit as e:
+        except SystemExit:
             raise
-            # raise Exception(e)  # XXX
+            # raise Exception(e)  # TODO
 
         parsed = vars(res)
         values = dict()

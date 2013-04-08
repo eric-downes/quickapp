@@ -2,6 +2,9 @@ from .. import Choice, comp_comb, logger
 from abc import abstractmethod, ABCMeta
 from compmake import comp
 
+__all__ = ['QuickAppInterface']
+
+
 class QuickAppInterface(object):
     __metaclass__ = ABCMeta
 
@@ -14,6 +17,7 @@ class QuickAppInterface(object):
 
     @abstractmethod
     def define_jobs(self):
+        """ This functions should define Compmake jobs using self.comp """
         pass
 
     # Resources

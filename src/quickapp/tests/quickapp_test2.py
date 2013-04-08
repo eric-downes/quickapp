@@ -6,7 +6,7 @@ import sys
 def actual_computation(param1, param2):
     pass
 
-def report(param2, jobs):
+def report(param2, jobs):  # @UnusedVariable
     r = Report()
     
     return r

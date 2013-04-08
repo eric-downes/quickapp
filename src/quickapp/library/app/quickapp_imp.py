@@ -1,15 +1,15 @@
-from . import QuickAppInterface
 from .. import (Choice, logger as l, DecentParams, DecentParamsResults,
     all_combinations)
 from ...utils import UserError, wrap_script_entry_point_noexit
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem, comp_prefix)
 from reprep.report_utils import ReportManager
+import argparse
 import contracts
+import hashlib
 import os
 import sys
-import argparse
-import hashlib
+from .quickapp_interface import QuickAppInterface
 
 
 class QuickApp(QuickAppInterface):
@@ -112,6 +112,8 @@ class QuickApp(QuickAppInterface):
                 os.makedirs(self._output_dir)
 
             self.define_jobs()
+            # TODO: check that we defined some jobs
+            
         if multiple:
             comp_prefix()
     
