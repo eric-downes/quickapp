@@ -9,7 +9,7 @@ class DecentParamsUserError(UserError):
 class DecentParam():
     
     def __init__(self, ptype, name, default=None, help=None,  # @ReservedAssignment
-                 compulsory=False, short=None):
+                 compulsory=False, short=None, allow_multi=False):
         self.ptype = ptype
         self.name = name
         self.default = default  
@@ -17,6 +17,7 @@ class DecentParam():
         self.compulsory = compulsory
         self.short = short
         self.order = None
+        self.allow_multi = allow_multi
         if self.default is not None:
             self.validate(self.default)
         
@@ -65,8 +66,10 @@ class DecentParam():
     
     def populate(self, parser):
         option = '--%s' % self.name
+        
+        nargs = '+' if self.allow_multi else 1
         other = dict(help=self.get_desc(), default=self.default,
-                     nargs='+')
+                     nargs=nargs)
         other['type'] = self.ptype
         if self.short is not None:
             option1 = '-%s' % self.short
@@ -77,13 +80,24 @@ class DecentParam():
 
 class DecentParamsResults():
     
-    def __init__(self, values, given, params):
+    def __init__(self, values, given, params, extra=None):
         self._values = values
         self._given = given
         self._params = params
+        self._extra = extra
     
         for k, v in values.items():
             self.__dict__[k] = v 
+    
+    def __str__(self):
+        return 'DPR(values=%s;given=%s;extra=%s)' % (self._values, self._given, self._extra)
+    
+    def get_extra(self):
+        return self._extra
+    
+    def get_params(self):
+        """ Returns the DecentParams structure which originated these results. """
+        return self._params 
     
     def __getitem__(self, name):
         return self._values[name]

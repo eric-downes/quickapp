@@ -1,2 +1,2 @@
-from .quickapp_interface import QuickAppInterface
+from .quickapp_interface import *
 from .quickapp_imp import *

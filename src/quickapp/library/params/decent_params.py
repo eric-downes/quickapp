@@ -1,8 +1,11 @@
 from . import (DecentParamFlag, DecentParam, DecentParamMultiple,
     DecentParamChoice, DecentParamsUserError, DecentParamsResults)
 from contracts import contract
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawTextHelpFormatter
 from quickapp.library.variations import Choice
+import argparse
+import warnings
+from pprint import pformat
 
 __all__ = ['DecentParams']
 
@@ -13,7 +16,11 @@ class DecentParams():
         self.usage = usage
         self.prog = prog
         self.params = {}
-      
+        self.accepts_extra = False
+    
+    def __str__(self):
+        return 'DecentParams(%s;extra=%s)' % (pformat(self.params), self.accepts_extra) 
+     
     def _add(self, p):
         if p.name in self.params:
             msg = "I already know param %r." % p.name
@@ -21,6 +28,9 @@ class DecentParams():
         p.order = len(self.params)
         self.params[p.name] = p
         
+    def accept_extra(self):
+        """ Declares that extra arguments are ok. """
+        self.accepts_extra = True
           
     def add_flag(self, name, **args):
         self._add(DecentParamFlag(ptype=bool, name=name, **args))
@@ -61,16 +71,50 @@ class DecentParams():
 
     @contract(args='list(str)', returns='tuple(dict, list(str))')    
     def parse_using_parser(self, parser, args):
-        """ Returns a dictionary with all values of parameters,
-            but possibly some values are Choice() instances,
-            and an """
+        """ 
+            Returns a dictionary with all values of parameters,
+            but possibly some values are Choice() instances.
+            
+        """
         try:
-            res = parser.parse_args(args)
+            argparse_res, argv = parser.parse_known_args(args)
+            if argv:
+                msg = 'Extra arguments found: %s' % argv
+                raise ValueError(msg)
         except SystemExit:
             raise
             # raise Exception(e)  # TODO
+        
+        values, given = self._interpret_args(argparse_res)
+        return values, given
+    
+    @contract(args='list(str)', returns='tuple(dict, list(str), list(str))')    
+    def parse_using_parser_extra(self, parser, args):
+        """ 
+            This returns also the extra parameters
+            
+            returns: values, given, argv
+        """
+        
+        parser.add_argument('remainder', nargs=argparse.REMAINDER)
 
-        parsed = vars(res)
+        try:
+            argparse_res, argv = parser.parse_known_args(args)
+        except SystemExit:
+            raise
+            # raise Exception(e)  # TODO
+        
+        
+        extra = argparse_res.remainder
+#         print argv, extra
+#         assert not argv
+        
+        values, given = self._interpret_args(argparse_res)
+        return values, given, extra
+    
+    
+    def _interpret_args(self, argparse_res):
+        parsed = vars(argparse_res)
         values = dict()
         given = set()
         for k, v in self.params.items():
@@ -78,7 +122,9 @@ class DecentParams():
                 msg = 'Compulsory option %r not given.' % k
                 raise DecentParamsUserError(msg)
             
-            if parsed[k] is not None:
+            warnings.warn('Not sure below')
+            # if parsed[k] is not None:
+            if k in parsed and parsed[k] is not None:
                 if parsed[k] != self.params[k].default:
                     given.add(k)
                     if isinstance(self.params[k], DecentParamMultiple):
@@ -107,8 +153,24 @@ class DecentParams():
             p.populate(option_container)
         
     def create_parser(self):
-        parser = ArgumentParser(usage=self.usage, prog=self.prog)
+        formatter = RawTextHelpFormatter(max_help_position=90)
+        parser = ArgumentParser(usage=self.usage, prog=self.prog, formatter=formatter)
         # parser.disable_interspersed_args()
         self.populate_parser(parser)
         return parser
+    
+    
+    def get_dpr_from_args(self, args, prog=None, usage=None, epilog=None,
+                          description=None):                
+        parser = argparse.ArgumentParser(prog=prog, usage=usage, epilog=epilog)
+        self.populate_parser(parser)
+
+        values, given, extra = self.parse_using_parser_extra(parser, args)
+        if extra and not self.accepts_extra:
+            msg = 'Found extra arguments not accepted: %s' % extra
+            raise ValueError(msg)
+        dpr = DecentParamsResults(values, given, self, extra=extra)
+        return dpr
+ 
+
             
