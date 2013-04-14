@@ -6,6 +6,7 @@ from quickapp.library.variations import Choice
 import argparse
 import warnings
 from pprint import pformat
+from quickapp.utils.script_utils import UserError
 
 __all__ = ['DecentParams']
 
@@ -147,23 +148,31 @@ class DecentParams():
                 values[k] = self.params[k].default
         return values, list(given) 
         
-    def populate_parser(self, option_container):
+    def _populate_parser(self, option_container):
         params = sorted(self.params.values(), key=lambda x: x.order)
         for p in params:
             p.populate(option_container)
+    
+    def create_parser(self, prog=None, usage=None, epilog=None,
+                          description=None):
+        def my_formatter(prog):
+            return RawTextHelpFormatter(prog=prog, max_help_position=90, width=None)
         
-    def create_parser(self):
-        formatter = RawTextHelpFormatter(max_help_position=90)
-        parser = ArgumentParser(usage=self.usage, prog=self.prog, formatter=formatter)
-        # parser.disable_interspersed_args()
-        self.populate_parser(parser)
+        class MyParser(argparse.ArgumentParser):
+            
+            def error(self, message):
+                raise UserError(message)
+            
+        parser = MyParser(prog=prog, usage=usage, epilog=epilog,
+                                        description=description,
+                                        formatter_class=my_formatter)
+        self._populate_parser(parser)
         return parser
     
     
     def get_dpr_from_args(self, args, prog=None, usage=None, epilog=None,
-                          description=None):                
-        parser = argparse.ArgumentParser(prog=prog, usage=usage, epilog=epilog)
-        self.populate_parser(parser)
+                          description=None):
+        parser = self.create_parser(prog=prog, usage=usage, epilog=epilog, description=description)
 
         values, given, extra = self.parse_using_parser_extra(parser, args)
         if extra and not self.accepts_extra:

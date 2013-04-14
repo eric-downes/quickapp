@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from quickapp.library.app_commands.app_with_commands import (QuickMultiCmdApp,
     add_subcommand, QuickMultiCmd)
-import sys
+from quickapp.library.app.quickapp_imp import quickapp_main
 
 
 class DemoApp(QuickMultiCmdApp):
@@ -46,12 +46,13 @@ class DemoAppCmd2(QuickMultiCmd):
 
 add_subcommand(DemoApp, DemoAppCmd2)
         
-def compapp_test1():
+
+def subcommands_test1():
     args = ['-o', 'quickapp_test1',
-            '-c', 'make all', '--param1', '10', '--param2', '1,2,3']
-    return DemoApp().main(args)
+            '-c', 'make all', '--param1', '10', '--param2', '42']
+    quickapp_main(DemoApp, args=args)
     
 
 if __name__ == '__main__':
-    sys.exit(DemoApp().main())
+    quickapp_main(DemoApp)
     

@@ -2,9 +2,9 @@ from abc import abstractmethod, ABCMeta
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem)
 from compmake.ui.ui import comp, comp_prefix, get_comp_prefix
-from quickapp import logger
+from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
 from quickapp.library.app.quickapp_interface import QuickAppBase
-from quickapp.utils.script_utils import wrap_script_entry_point, UserError
+from quickapp.utils import wrap_script_entry_point, UserError
 from reprep.report_utils import ReportManager
 import contracts
 import hashlib
@@ -12,14 +12,17 @@ import os
 import sys
 import warnings
 from contracts import contract
-from conf_tools.utils.indent_string import indent
+from conf_tools.utils import indent
 import traceback
-from quickapp.library.params.decent_params import DecentParams
-
+from types import NoneType
+ 
 class CompmakeContext():
 
     @contract(extra_dep='list')    
-    def __init__(self, parent, job_prefix, report_manager, output_dir, extra_dep=[]):
+    def __init__(self, qapp, parent, job_prefix, report_manager, output_dir, extra_dep=[]):
+        assert isinstance(qapp, QuickApp)
+        assert isinstance(parent, (CompmakeContext, NoneType))
+        self._qapp = qapp
         self._parent = parent
         self._job_prefix = job_prefix
         self._report_manager = report_manager
@@ -57,17 +60,45 @@ class CompmakeContext():
 
         return self._output_dir
         
-    def child(self, name, extra_dep=[]):
-        """ Returns child context """
-        if self._job_prefix is None:
-            job_prefix = name
-        else:
-            job_prefix = self._job_prefix + '-' + name
+    @contract(extra_dep='list')    
+    def child(self, name, qapp=None, add_job_prefix=None, add_outdir=None, extra_dep=[]):
+        """ 
+            Returns child context 
         
-        output_dir = os.path.join(self._output_dir, name)
+            add_job_prefix = 
+                None (default) => use "name"
+                 '' => do not add to the prefix
+            
+            add_outdir:
+                None (default) => use "name"
+                 '' => do not add outdir               
+        """
+        if qapp is None:
+            qapp = self._qapp
+            
+        if add_job_prefix is None:
+            add_job_prefix = name
+            
+        if add_outdir is None:
+            add_outdir = name
+        
+        if add_job_prefix != '':
+            if self._job_prefix is None:
+                job_prefix = name
+            else:
+                job_prefix = self._job_prefix + '-' + name
+        else:
+            job_prefix = self._job_prefix
+        
+        if add_outdir != '':
+            output_dir = os.path.join(self._output_dir, name)
+        else:
+            output_dir = self._output_dir
+            
         warnings.warn('add prefix to report manager')
         report_manager = self._report_manager
-        return CompmakeContext(parent=self,
+         
+        return CompmakeContext(qapp=qapp, parent=self,
                                job_prefix=job_prefix,
                                report_manager=report_manager,
                                output_dir=output_dir,
@@ -75,17 +106,19 @@ class CompmakeContext():
     
     def add_report(self, report, report_type=None, **params):
         rm = self.get_report_manager()
-#         logger.info('Add reports with params %s' % str(self._current_params))
         rm.add(report, report_type, **params)
 
-#     def add_report(self, report, report_type=None):
-#         rm = self.get_report_manager()
-#         logger.info('Add reports with params %s' % str(self._current_params))
-#         rm.add(report, report_type, **self._current_params)
 
     def get_report_manager(self):
         return self._report_manager
-
+    
+    @contract(extra_dep='list')    
+    def subtask(self, task, extra_dep=[], **task_config):
+        return self._qapp.call_recursive(context=self, child_name=task.cmd,
+                                 cmd_class=task, args=task_config,
+                                   extra_dep=extra_dep,
+                                   add_outdir=None,
+                                   add_job_prefix=None)
 
 
 class QuickApp(QuickAppBase):
@@ -93,18 +126,14 @@ class QuickApp(QuickAppBase):
     __metaclass__ = ABCMeta
 
     # Interface to be implemented
-    
     @abstractmethod
-    @contract(params=DecentParams)
-    def define_options(self, params):
-        """ Define the options """
+    def define_jobs_context(self, context):
         pass
 
-
-    def __init__(self):
-        QuickAppBase.__init__(self)
-
-         
+    @abstractmethod
+    def define_options(self, params):
+        pass
+             
     def _define_options_compmake(self, params):
         script_name = self.get_prog_name()
         default_output_dir = 'out-%s/' % script_name
@@ -124,14 +153,11 @@ class QuickApp(QuickAppBase):
         self._define_options_compmake(params)
         self.define_options(params)
     
-    @abstractmethod
-    def define_jobs_context(self, context):
-        pass
     
     def get_qapp_parent(self):
         parent = self.parent
         while parent is not None:
-            logger.info('Checking %s' % parent)
+            # logger.info('Checking %s' % parent)
             if isinstance(parent, QuickApp):
                 return parent
             parent = parent.parent
@@ -180,7 +206,7 @@ class QuickApp(QuickAppBase):
         report_manager = ReportManager(reports, reports_index)
         
         job_prefix = None
-        context = CompmakeContext(parent=None, job_prefix=job_prefix,
+        context = CompmakeContext(parent=None, qapp=self, job_prefix=job_prefix,
                                   report_manager=report_manager,
                                   output_dir=outdir)
         
@@ -197,13 +223,28 @@ class QuickApp(QuickAppBase):
             raise ValueError(msg)
         else: 
             if not options.console:
-                return batch_command(options.command)
+                batch_result = batch_command(options.command)
+                print('batch_command returned %s' % batch_result)
+                if isinstance(batch_result, str):
+                    ret = QUICKAPP_COMPUTATION_ERROR
+                elif isinstance(batch_result, int):
+                    if batch_result == 0:
+                        ret = 0
+                    else:
+                        # xxx: discarded information
+                        ret = QUICKAPP_COMPUTATION_ERROR
+                else:
+                    assert False 
+                return ret
             else:
                 compmake_console()
                 return 0
 
-    @contract(cmd_class='str', args='list(str)')
-    def call_recursive(self, context, child_name, cmd_class, args, extra_dep=[]):
+    @contract(args='dict(str:*)|list(str)', extra_dep='list')
+    def call_recursive(self, context, child_name, cmd_class, args,
+                       extra_dep=[],
+                       add_outdir=None,
+                       add_job_prefix=None):
         
         def dict2cmdline(x):
             res = []
@@ -224,12 +265,14 @@ class QuickApp(QuickAppBase):
         is_quickapp = isinstance(instance, QuickApp) 
         
         try:
+
             # we are already in a context; just define jobs
-            child_context = context.child(child_name, extra_dep=extra_dep)  # XXX
+            child_context = context.child(qapp=self, name=child_name, extra_dep=extra_dep,
+                                          add_outdir=add_outdir, add_job_prefix=add_job_prefix)  # XXX
             instance.set_options_from_args(args)
 
             if not is_quickapp:
-                self.info('Instance is not quickapp! %s' % type(instance))
+                # self.info('Instance is not quickapp! %s' % type(instance))
                 self.child_context = child_context
                 instance.go()
                 return self.child_context
@@ -293,8 +336,12 @@ class QuickApp(QuickAppBase):
 #     def comp_comb(self, *args, **kwargs):
 #         return comp_comb(*args, **kwargs)
 
-
-
+# new_contract('QuickApp', QuickApp)
+# new_contract('CompmakeContext', CompmakeContext)
+ 
+ 
+ 
+# TODO: remove
 def create_conf_name_digest(values, length=12):
     """ Create an hash for the given values """
     s = "-".join([str(values[x]) for x in sorted(values.keys())])
@@ -305,17 +352,24 @@ def create_conf_name_digest(values, length=12):
 
 
 
-def quickapp_main(quickapp_class):
+def quickapp_main(quickapp_class, args=None, sys_exit=True):
     """
         Use like this:
         
             if __name__ == '__main__':
                 quickapp_main(MyQuickApp)
+                
+        
+        if sys_exit is True, we call sys.exis(ret), otherwise we return the value.
+         
     """
     instance = quickapp_class()
-    wrap_script_entry_point(instance.main, logger,
+    if args is None:
+        args = sys.argv[1:]
+        
+    return wrap_script_entry_point(instance.main, logger,
                             exceptions_no_traceback=(UserError,),
-                            args=sys.argv[1:])
+                            args=args, sys_exit=sys_exit)
 
 
 

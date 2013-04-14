@@ -10,7 +10,7 @@ class UserError(Exception):
 
 def wrap_script_entry_point(function, logger,
                             exceptions_no_traceback=(UserError,),
-                            args=None):
+                            args=None, sys_exit=True):
     """
         Wraps the main() of a script.
         For Exception: we exit with value 2.
@@ -19,28 +19,31 @@ def wrap_script_entry_point(function, logger,
          just print the error, and return 1.
         
     """
-    if args is None:
-        args = sys.argv[1:]
-    try:
-        ret = function(args)
-        if ret is None:
-            ret = 0
+#     if args is None:
+#         args = sys.argv[1:]
+#     try:
+#         ret = function(args)
+#         if ret is None:
+#             ret = 0
+#         sys.exit(ret)
+#     except exceptions_no_traceback as e:
+#         logger.error(str(e))
+#         sys.exit(1)
+#     except Exception as e:
+#         logger.error(traceback.format_exc())
+#         sys.exit(2)
+    ret = wrap_script_entry_point_noexit(function, logger, exceptions_no_traceback, args)
+    if sys_exit:
         sys.exit(ret)
-    except exceptions_no_traceback as e:
-        logger.error(str(e))
-        sys.exit(1)
-    except Exception as e:
-        logger.error(traceback.format_exc())
-        sys.exit(2)
-
+    else:
+        return ret
 
 def wrap_script_entry_point_noexit(function, logger,
                             exceptions_no_traceback=(UserError,),
                             args=None):
     """
         Wraps the main() of a script.
-        For Exception: we exit with value 2.
-        
+         
         :param exceptions_no_traceback: list of exceptions for which we 
          just print the error, and return 1.
         

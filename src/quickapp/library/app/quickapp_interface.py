@@ -4,6 +4,9 @@ from quickapp.utils.has_logger import HasLogger
 import logging
 from conf_tools.utils.indent_string import indent
 import traceback
+from quickapp.utils.script_utils import UserError
+from contracts import contract
+from contracts.interface import describe_value
 
 
 class QuickAppBase(HasLogger):
@@ -24,8 +27,9 @@ class QuickAppBase(HasLogger):
         pass
 
     @abstractmethod
+    @contract(returns='None|int')
     def go(self):
-        """ Must be implemented """
+        """ Must be implemented. Should return either None => success, or an integer error code. """
         pass
     
     def get_program_description(self):
@@ -50,13 +54,29 @@ class QuickAppBase(HasLogger):
             raise ValueError(msg)
         return klass.__dict__['cmd']
     
+    @contract(args='None|list(str)', returns=int)
     def main(self, args=None, parent=None):
+        """ Returns an integer """ 
         # Create the parameters and set them using args
         self.parent = parent
         self.set_options_from_args(args)
-        self.go()
+        ret = self.go()
+        if ret is None:
+            ret = 0
+        
+        if isinstance(ret, int):
+            return ret
+        else:
+            msg = 'Expected None or an integer fomr self.go(), got %s' % describe_value(ret)
+            raise ValueError(msg)
+        
 
     def set_options_from_args(self, args):
+        """
+        
+            raises: UserError: Wrong configuration, user's mistake.
+                    Exception: all other exceptions
+        """
         prog = self.get_prog_name()
         params = DecentParams()
         self.define_program_options(params)
@@ -66,6 +86,8 @@ class QuickAppBase(HasLogger):
                                                      usage=self.get_usage(),
                                                      description=self.get_program_description(),
                                                      epilog=self.get_epilog())
+        except UserError:
+            raise
         except Exception as e:
             msg = 'Could not interpret:\n'
             msg += ' args = %s\n' % args

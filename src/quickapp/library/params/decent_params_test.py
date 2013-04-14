@@ -1,6 +1,7 @@
 from nose.tools import raises
 from quickapp import DecentParams
 import unittest
+from quickapp.utils.script_utils import UserError
 
 
 class ParamsTest(unittest.TestCase):
@@ -18,8 +19,8 @@ class ParamsTest(unittest.TestCase):
         
         args = ['--vehicle', 'y',
                 '--float1', '1.2',
-                '--floats', '1.2' '2.3',
-                '--ints', '1', '2' '3']
+                '--floats', '1.2', '2.3',
+                '--ints', '1', '2', '3']
         
         try:    
             res = p.parse_args(args)
@@ -36,7 +37,7 @@ class ParamsTest(unittest.TestCase):
         self.assertEqual(res.floats, [1.2, 2.3])
         self.assertEqual(res.ints, [1, 2, 3])
         
-    @raises(ValueError)
+    @raises(UserError)
     def decent_params_test2(self):
         """ Test compulsory """
         p = DecentParams()

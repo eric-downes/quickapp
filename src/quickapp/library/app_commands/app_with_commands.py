@@ -4,7 +4,6 @@ from quickapp.library.app.quickapp_imp import QuickApp
 from quickapp.utils.script_utils import UserError
 import logging
 from quickapp.library.app.quickapp_interface import QuickAppBase
-from quickapp import logger
 
 class QuickMultiCmd(QuickApp):
     
@@ -16,8 +15,8 @@ class QuickMultiCmd(QuickApp):
 class QuickMultiCmdApp(QuickAppBase):
     __metaclass__ = ABCMeta
  
-    def __init__(self, logger=None):
-        QuickAppBase.__init__(self)
+#     def __init__(self, logger=None):
+#         QuickAppBase.__init__(self)
     
     def define_program_options(self, params):
         self.define_multicmd_options(params)
@@ -35,21 +34,6 @@ class QuickMultiCmdApp(QuickAppBase):
         return 'prog [general options] <command> [command options]'
     
     def go(self):
-#         prog = self.get_prog_name()
-                
-        # TODO: FIXME
-        # print '%(prog) [general options] <command> [command options]'
-#         description = self.get_program_description()
-#         epilog = self._get_epilog()
-#            
-#         parser = argparse.ArgumentParser(prog=prog, usage=usage, description=description,
-#                                          epilog=epilog)
-#         app_params.populate_parser(parser)
-#         values, given, extra = app_params.parse_using_parser_extra(parser, args)
-#         options = DecentParamsResults(values, given, app_params.params)
-#         self._options = options
-#         
-
         self.initial_setup()
         
         cmds = self._get_subs_as_dict()
@@ -77,7 +61,6 @@ class QuickMultiCmdApp(QuickAppBase):
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.DEBUG)
         sub_inst.logger = logger
-        # sub_inst.parent = self
         
         sub_inst.main(args=cmd_args, parent=self)
         
@@ -94,7 +77,6 @@ class QuickMultiCmdApp(QuickAppBase):
             s += "  %30s  %s\n" % (cmd_name, cmd_short)
              
         return s
-        # print 'subcommands: ', self.get_subs().keys()
     
     def _get_subs_names_fmt(self):
         """ Returns 'cmd1, cmd2, cmd3; """
@@ -118,7 +100,7 @@ class QuickMultiCmdApp(QuickAppBase):
         
 
 def add_subcommand(app, cmd):
-    logger.info('Adding command  %s - %s' % (app.cmd, cmd.cmd))
+    # logger.info('Adding command  %s - %s' % (app.cmd, cmd.cmd))
     # cmd_name = cmd.cmd
     cmds = QuickMultiCmdApp.subs[app]
 #     if cmd_name in cmds:
