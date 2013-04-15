@@ -15,6 +15,7 @@ from contracts import contract
 from conf_tools.utils import indent
 import traceback
 from types import NoneType
+
  
 class CompmakeContext():
 
@@ -187,11 +188,6 @@ class QuickApp(QuickAppBase):
 
         warnings.warn('removed configuration below')  # (start)
 
-        # run_name = create_conf_name_digest(options, length=12)
-        # self.logger.info('Configuration name: %r' % run_name)
-        # (end)
-#         run_name = 'no-conf'
-        # outdir = os.path.join(options.output, run_name)
         outdir = options.output
         
         # Compmake storage for results        
@@ -291,6 +287,70 @@ class QuickApp(QuickAppBase):
             raise Exception(msg)
         
         
+# TODO: remove
+def create_conf_name_digest(values, length=12):
+    """ Create an hash for the given values """
+    s = "-".join([str(values[x]) for x in sorted(values.keys())])
+    h = hashlib.sha224(s).hexdigest()
+    if len(h) > length:
+        h = h[:length]
+    return h
+
+
+
+def quickapp_main(quickapp_class, args=None, sys_exit=True):
+    """
+        Use like this:
+        
+            if __name__ == '__main__':
+                quickapp_main(MyQuickApp)
+                
+        
+        if sys_exit is True, we call sys.exis(ret), otherwise we return the value.
+         
+    """
+    instance = quickapp_class()
+    if args is None:
+        args = sys.argv[1:]
+        
+    return wrap_script_entry_point(instance.main, logger,
+                            exceptions_no_traceback=(UserError,),
+                            args=args, sys_exit=sys_exit)
+
+
+
+# run_name = create_conf_name_digest(options, length=12)
+# self.logger.info('Configuration name: %r' % run_name)
+# (end)
+#         run_name = 'no-conf'
+# outdir = os.path.join(options.output, run_name)
+
+#
+# def create_conf_name(values, given, limit=32):
+#    cn = create_conf_name_values(values, given)
+#    if len(cn) > limit:
+#        cn = cn[:limit]  # TODO XXX
+#    return cn
+#    
+    
+#    
+# def create_conf_name_values(values, given):
+#    def make_short(a):
+#        if isinstance(a, Choice):
+#            s = ','.join([make_short(x) for x in a])
+#        else:
+#            s = str(a)
+#        if '/' in s:
+#            s = os.path.basename(s)
+#            s = os.path.splitext(s)[0]
+#            s = s.replace('.', '_')
+#        s = s.replace(',', '_')
+#        return s
+#    return "-".join([make_short(values[x]) for x in sorted(given)])
+#    
+#    
+    
+
          
         
 #     def old_stuff():
@@ -341,60 +401,3 @@ class QuickApp(QuickAppBase):
  
  
  
-# TODO: remove
-def create_conf_name_digest(values, length=12):
-    """ Create an hash for the given values """
-    s = "-".join([str(values[x]) for x in sorted(values.keys())])
-    h = hashlib.sha224(s).hexdigest()
-    if len(h) > length:
-        h = h[:length]
-    return h
-
-
-
-def quickapp_main(quickapp_class, args=None, sys_exit=True):
-    """
-        Use like this:
-        
-            if __name__ == '__main__':
-                quickapp_main(MyQuickApp)
-                
-        
-        if sys_exit is True, we call sys.exis(ret), otherwise we return the value.
-         
-    """
-    instance = quickapp_class()
-    if args is None:
-        args = sys.argv[1:]
-        
-    return wrap_script_entry_point(instance.main, logger,
-                            exceptions_no_traceback=(UserError,),
-                            args=args, sys_exit=sys_exit)
-
-
-
-#
-# def create_conf_name(values, given, limit=32):
-#    cn = create_conf_name_values(values, given)
-#    if len(cn) > limit:
-#        cn = cn[:limit]  # TODO XXX
-#    return cn
-#    
-    
-#    
-# def create_conf_name_values(values, given):
-#    def make_short(a):
-#        if isinstance(a, Choice):
-#            s = ','.join([make_short(x) for x in a])
-#        else:
-#            s = str(a)
-#        if '/' in s:
-#            s = os.path.basename(s)
-#            s = os.path.splitext(s)[0]
-#            s = s.replace('.', '_')
-#        s = s.replace(',', '_')
-#        return s
-#    return "-".join([make_short(values[x]) for x in sorted(given)])
-#    
-#    
-    
