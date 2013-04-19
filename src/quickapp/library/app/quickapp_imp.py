@@ -7,7 +7,6 @@ from quickapp.library.app.quickapp_interface import QuickAppBase
 from quickapp.utils import wrap_script_entry_point, UserError
 from reprep.report_utils import ReportManager
 import contracts
-import hashlib
 import os
 import sys
 import warnings
@@ -15,6 +14,7 @@ from contracts import contract
 from conf_tools.utils import indent
 import traceback
 from types import NoneType
+from compmake.structures import Promise
 
  
 class CompmakeContext():
@@ -35,6 +35,25 @@ class CompmakeContext():
     def all_jobs(self):
         return list(self._jobs.values())
     
+    def all_jobs_dict(self):
+        return dict(self._jobs)
+    
+    @contract(job_name='str', returns=Promise)
+    def checkpoint(self, job_name):
+        """ 
+            Creates a dummy job called "job_name" that depends on all jobs
+            previously defined; further, this new job is put into _extra_dep.
+            This means that all successive jobs will require that the previous 
+            ones be done.
+            
+            Returns the checkpoint job (CompmakePromise).
+        """
+        job_checkpoint = self.comp(checkpoint, job_name, prev_jobs=list(self._jobs.values()),
+                                   job_id=job_name)
+        self._extra_dep.append(job_checkpoint)
+        return job_checkpoint
+    
+    @contract(returns=Promise)
     def comp(self, *args, **kwargs):
         """ 
             Simple wrapper for Compmake's comp function. 
@@ -98,12 +117,15 @@ class CompmakeContext():
             
         warnings.warn('add prefix to report manager')
         report_manager = self._report_manager
+        
+        
+        _extra_dep = self._extra_dep + extra_dep
          
         return CompmakeContext(qapp=qapp, parent=self,
                                job_prefix=job_prefix,
                                report_manager=report_manager,
                                output_dir=output_dir,
-                               extra_dep=extra_dep)
+                               extra_dep=_extra_dep)
     
     def add_report(self, report, report_type=None, **params):
         rm = self.get_report_manager()
@@ -116,10 +138,14 @@ class CompmakeContext():
     @contract(extra_dep='list')    
     def subtask(self, task, extra_dep=[], **task_config):
         return self._qapp.call_recursive(context=self, child_name=task.cmd,
-                                 cmd_class=task, args=task_config,
-                                   extra_dep=extra_dep,
-                                   add_outdir=None,
-                                   add_job_prefix=None)
+                                         cmd_class=task, args=task_config,
+                                         extra_dep=extra_dep,
+                                         add_outdir=None,
+                                         add_job_prefix=None)
+
+
+def checkpoint(name, prev_jobs):
+    pass
 
 
 class QuickApp(QuickAppBase):
@@ -240,23 +266,8 @@ class QuickApp(QuickAppBase):
     def call_recursive(self, context, child_name, cmd_class, args,
                        extra_dep=[],
                        add_outdir=None,
-                       add_job_prefix=None):
-        
-        def dict2cmdline(x):
-            res = []
-            for k, v in x.items():
-                res.append('--%s' % k)
-                res.append('%s' % v)
-            return res
-        
-        if isinstance(args, dict):
-            args = dict2cmdline(args)
-            
-            
-        if isinstance(extra_dep, CompmakeContext):
-            extra_dep = extra_dep.all_jobs()
+                       add_job_prefix=None):     
         instance = cmd_class()
-        
         instance.parent = self
         is_quickapp = isinstance(instance, QuickApp) 
         
@@ -265,17 +276,26 @@ class QuickApp(QuickAppBase):
             # we are already in a context; just define jobs
             child_context = context.child(qapp=self, name=child_name, extra_dep=extra_dep,
                                           add_outdir=add_outdir, add_job_prefix=add_job_prefix)  # XXX
-            instance.set_options_from_args(args)
+        
+            if isinstance(args, list):
+                instance.set_options_from_args(args)
+            elif isinstance(args, dict):
+                instance.set_options_from_dict(args)
+            else:
+                assert False
+            
 
             if not is_quickapp:
                 # self.info('Instance is not quickapp! %s' % type(instance))
                 self.child_context = child_context
-                instance.go()
-                return self.child_context
-                
+                instance.go()  
             else:
                 instance.define_jobs_context(child_context)
-                return child_context
+                
+            # Add his jobs to our list of jobs
+            context._jobs.update(child_context.all_jobs_dict()) 
+            return child_context
+        
         except Exception as e:
             msg = 'Error while trying to call recursive:\n'
             msg += ' class = %s\n' % cmd_class
@@ -285,18 +305,7 @@ class QuickApp(QuickAppBase):
                 msg += ' params: %s\n' % instance.get_options().get_params()
             msg += indent(traceback.format_exc(e), '> ')
             raise Exception(msg)
-        
-        
-# TODO: remove
-def create_conf_name_digest(values, length=12):
-    """ Create an hash for the given values """
-    s = "-".join([str(values[x]) for x in sorted(values.keys())])
-    h = hashlib.sha224(s).hexdigest()
-    if len(h) > length:
-        h = h[:length]
-    return h
-
-
+      
 
 def quickapp_main(quickapp_class, args=None, sys_exit=True):
     """
@@ -317,6 +326,17 @@ def quickapp_main(quickapp_class, args=None, sys_exit=True):
                             exceptions_no_traceback=(UserError,),
                             args=args, sys_exit=sys_exit)
 
+
+  
+#         
+# # TODO: remove
+# def create_conf_name_digest(values, length=12):
+#     """ Create an hash for the given values """
+#     s = "-".join([str(values[x]) for x in sorted(values.keys())])
+#     h = hashlib.sha224(s).hexdigest()
+#     if len(h) > length:
+#         h = h[:length]
+#     return h
 
 
 # run_name = create_conf_name_digest(options, length=12)

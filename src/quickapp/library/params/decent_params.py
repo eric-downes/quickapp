@@ -1,7 +1,6 @@
 from . import (DecentParamFlag, DecentParam, DecentParamMultiple,
     DecentParamChoice, DecentParamsUserError, DecentParamsResults)
 from contracts import contract
-from argparse import ArgumentParser, RawTextHelpFormatter
 from quickapp.library.variations import Choice
 import argparse
 import warnings
@@ -38,12 +37,21 @@ class DecentParams():
 
     def add_string(self, name, **args):
         self._add(DecentParam(ptype=str, name=name, **args))
+
+    def add_required_string(self, name, **args):
+        self._add(DecentParam(ptype=str, name=name, compulsory=True, **args))
         
     def add_float(self, name, **args):
         self._add(DecentParam(ptype=float, name=name, **args))
 
+    def add_required_float(self, name, **args):
+        self._add(DecentParam(ptype=float, name=name, compulsory=True, **args))
+
     def add_int(self, name, **args):
         self._add(DecentParam(ptype=int, name=name, **args))
+
+    def add_required_int(self, name, **args):
+        self._add(DecentParam(ptype=int, name=name, compulsory=True, **args))
 
     def add_string_list(self, name, **args):
         self._add(DecentParamMultiple(ptype=str, name=name, **args))
@@ -116,6 +124,10 @@ class DecentParams():
     
     def _interpret_args(self, argparse_res):
         parsed = vars(argparse_res)
+        return self._interpret_args2(parsed)
+    
+    @contract(parsed='dict', returns='tuple(dict, list(str))')
+    def _interpret_args2(self, parsed):
         values = dict()
         given = set()
         for k, v in self.params.items():
@@ -156,7 +168,7 @@ class DecentParams():
     def create_parser(self, prog=None, usage=None, epilog=None,
                           description=None):
         def my_formatter(prog):
-            return RawTextHelpFormatter(prog=prog, max_help_position=90, width=None)
+            return argparse.RawTextHelpFormatter(prog=prog, max_help_position=90, width=None)
         
         class MyParser(argparse.ArgumentParser):
             
@@ -170,6 +182,7 @@ class DecentParams():
         return parser
     
     
+    @contract(args='list(str)')
     def get_dpr_from_args(self, args, prog=None, usage=None, epilog=None,
                           description=None):
         parser = self.create_parser(prog=prog, usage=usage, epilog=epilog, description=description)
@@ -181,5 +194,12 @@ class DecentParams():
         dpr = DecentParamsResults(values, given, self, extra=extra)
         return dpr
  
+
+    @contract(config='dict(str:*)')
+    def get_dpr_from_dict(self, config):
+        extra = []  # TODO 
+        values, given = self._interpret_args2(config)
+        dpr = DecentParamsResults(values, given, self, extra=extra)
+        return dpr
 
             

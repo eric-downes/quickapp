@@ -7,6 +7,7 @@ import traceback
 from quickapp.utils.script_utils import UserError
 from contracts import contract
 from contracts.interface import describe_value
+from pprint import pformat
 
 
 class QuickAppBase(HasLogger):
@@ -71,6 +72,32 @@ class QuickAppBase(HasLogger):
             raise ValueError(msg)
         
 
+    @contract(config='dict(str:*)')
+    def set_options_from_dict(self, config):
+        """
+        
+            raises: UserError: Wrong configuration, user's mistake.
+                    Exception: all other exceptions
+        """
+        params = DecentParams()
+        self.define_program_options(params)
+        
+        try:
+            self._options = params.get_dpr_from_dict(config)
+             
+        except UserError:
+            raise
+        except Exception as e:
+            msg = 'Could not interpret:\n'
+            msg += indent(pformat(config), '| ') 
+            msg += 'according to params spec:\n'
+            msg += indent(str(params), '| ') + '\n'
+            msg += 'Error is:\n'
+            msg += indent(traceback.format_exc(e), '> ')
+            raise Exception(msg)  # XXX class
+         
+ 
+    @contract(args='list(str)')
     def set_options_from_args(self, args):
         """
         
