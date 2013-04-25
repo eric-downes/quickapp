@@ -1,7 +1,7 @@
 from . import ResourceManager
+from ..repmanager import ReportManager
 from compmake import Promise, comp, comp_prefix
 from contracts import contract, describe_type
-from reprep.report_utils import ReportManager
 from types import NoneType
 import os
 import warnings

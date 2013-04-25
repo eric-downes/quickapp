@@ -7,7 +7,6 @@ from contracts import contract
 from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
 from quickapp.library.app.quickapp_interface import QuickAppBase
 from quickapp.utils import wrap_script_entry_point, UserError
-from reprep.report_utils import ReportManager
 import contracts
 import os
 import sys
