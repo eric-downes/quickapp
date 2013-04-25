@@ -1,7 +1,9 @@
 from abc import abstractmethod, ABCMeta
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem)
-from compmake.ui.ui import comp, comp_prefix, get_comp_prefix
+from compmake.ui.ui import comp_prefix, get_comp_prefix
+from conf_tools.utils import indent
+from contracts import contract
 from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
 from quickapp.library.app.quickapp_interface import QuickAppBase
 from quickapp.utils import wrap_script_entry_point, UserError
@@ -9,144 +11,13 @@ from reprep.report_utils import ReportManager
 import contracts
 import os
 import sys
-import warnings
-from contracts import contract
-from conf_tools.utils import indent
 import traceback
-from types import NoneType
-from compmake.structures import Promise
-
- 
-class CompmakeContext():
-
-    @contract(extra_dep='list')    
-    def __init__(self, qapp, parent, job_prefix, report_manager, output_dir, extra_dep=[]):
-        assert isinstance(qapp, QuickApp)
-        assert isinstance(parent, (CompmakeContext, NoneType))
-        self._qapp = qapp
-        self._parent = parent
-        self._job_prefix = job_prefix
-        self._report_manager = report_manager
-        self._output_dir = output_dir
-        self.n_comp_invocations = 0
-        self._extra_dep = extra_dep
-        self._jobs = {}
-        
-    def all_jobs(self):
-        return list(self._jobs.values())
-    
-    def all_jobs_dict(self):
-        return dict(self._jobs)
-    
-    @contract(job_name='str', returns=Promise)
-    def checkpoint(self, job_name):
-        """ 
-            Creates a dummy job called "job_name" that depends on all jobs
-            previously defined; further, this new job is put into _extra_dep.
-            This means that all successive jobs will require that the previous 
-            ones be done.
-            
-            Returns the checkpoint job (CompmakePromise).
-        """
-        job_checkpoint = self.comp(checkpoint, job_name, prev_jobs=list(self._jobs.values()),
-                                   job_id=job_name)
-        self._extra_dep.append(job_checkpoint)
-        return job_checkpoint
-    
-    @contract(returns=Promise)
-    def comp(self, *args, **kwargs):
-        """ 
-            Simple wrapper for Compmake's comp function. 
-            Use this instead of "comp". """
-        self.count_comp_invocations()
-        comp_prefix(self._job_prefix)
-        extra_dep = self._extra_dep + kwargs.get('extra_dep', [])
-        kwargs['extra_dep'] = extra_dep
-        promise = comp(*args, **kwargs)
-        self._jobs[promise.job_id] = promise
-        return promise
-
-    def count_comp_invocations(self):
-        self.n_comp_invocations += 1
-        if self._parent is not None:
-            self._parent.count_comp_invocations()
+import warnings
+from quickapp.library.context.resource_manager import ResourceManager
+from quickapp.library.context.compmake_context import CompmakeContext
 
 
-    def get_output_dir(self):
-        """ Returns a suitable output directory for data files """
-        # only create output dir on demand
-        if not os.path.exists(self._output_dir):
-            os.makedirs(self._output_dir)
-
-        return self._output_dir
-        
-    @contract(extra_dep='list')    
-    def child(self, name, qapp=None, add_job_prefix=None, add_outdir=None, extra_dep=[]):
-        """ 
-            Returns child context 
-        
-            add_job_prefix = 
-                None (default) => use "name"
-                 '' => do not add to the prefix
-            
-            add_outdir:
-                None (default) => use "name"
-                 '' => do not add outdir               
-        """
-        if qapp is None:
-            qapp = self._qapp
-            
-        if add_job_prefix is None:
-            add_job_prefix = name
-            
-        if add_outdir is None:
-            add_outdir = name
-        
-        if add_job_prefix != '':
-            if self._job_prefix is None:
-                job_prefix = name
-            else:
-                job_prefix = self._job_prefix + '-' + name
-        else:
-            job_prefix = self._job_prefix
-        
-        if add_outdir != '':
-            output_dir = os.path.join(self._output_dir, name)
-        else:
-            output_dir = self._output_dir
-            
-        warnings.warn('add prefix to report manager')
-        report_manager = self._report_manager
-        
-        
-        _extra_dep = self._extra_dep + extra_dep
-         
-        return CompmakeContext(qapp=qapp, parent=self,
-                               job_prefix=job_prefix,
-                               report_manager=report_manager,
-                               output_dir=output_dir,
-                               extra_dep=_extra_dep)
-    
-    def add_report(self, report, report_type=None, **params):
-        rm = self.get_report_manager()
-        rm.add(report, report_type, **params)
-
-
-    def get_report_manager(self):
-        return self._report_manager
-    
-    @contract(extra_dep='list')    
-    def subtask(self, task, extra_dep=[], **task_config):
-        return self._qapp.call_recursive(context=self, child_name=task.cmd,
-                                         cmd_class=task, args=task_config,
-                                         extra_dep=extra_dep,
-                                         add_outdir=None,
-                                         add_job_prefix=None)
-
-
-def checkpoint(name, prev_jobs):
-    pass
-
+   
 
 class QuickApp(QuickAppBase):
 
@@ -226,12 +97,14 @@ class QuickApp(QuickAppBase):
         reports = os.path.join(outdir, 'reports')
         reports_index = os.path.join(outdir, 'reports.html')
         report_manager = ReportManager(reports, reports_index)
+        resource_manager = ResourceManager(None)
         
         job_prefix = None
         context = CompmakeContext(parent=None, qapp=self, job_prefix=job_prefix,
                                   report_manager=report_manager,
+                                  resource_manager=resource_manager,
                                   output_dir=outdir)
-        
+        resource_manager.context = context  #  XXX not elegant
         self.context = context
         original = get_comp_prefix()
         self.define_jobs_context(context)
@@ -288,13 +161,13 @@ class QuickApp(QuickAppBase):
             if not is_quickapp:
                 # self.info('Instance is not quickapp! %s' % type(instance))
                 self.child_context = child_context
-                instance.go()  
+                res = instance.go()  
             else:
-                instance.define_jobs_context(child_context)
+                res = instance.define_jobs_context(child_context)
                 
             # Add his jobs to our list of jobs
             context._jobs.update(child_context.all_jobs_dict()) 
-            return child_context
+            return res
         
         except Exception as e:
             msg = 'Error while trying to call recursive:\n'
