@@ -8,6 +8,7 @@ from quickapp.utils.script_utils import UserError
 from contracts import contract
 from contracts.interface import describe_value
 from pprint import pformat
+import sys
 
 
 class QuickAppBase(HasLogger):
@@ -51,9 +52,9 @@ class QuickAppBase(HasLogger):
     def get_prog_name(self):
         klass = type(self)
         if not 'cmd' in klass.__dict__:
-            msg = 'Please specify "cmd" in class %s.' % klass
-            raise ValueError(msg)
-        return klass.__dict__['cmd']
+            return sys.argv[0]
+        else:    
+            return klass.__dict__['cmd']
     
     @contract(args='None|list(str)', returns=int)
     def main(self, args=None, parent=None):

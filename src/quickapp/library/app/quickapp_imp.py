@@ -14,6 +14,7 @@ import traceback
 import warnings
 from quickapp.library.context.resource_manager import ResourceManager
 from quickapp.library.context.compmake_context import CompmakeContext
+from quickapp.library.repmanager.report_manager import ReportManager
 
 
    
