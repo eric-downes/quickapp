@@ -1,9 +1,9 @@
 from abc import abstractmethod, ABCMeta
-from psutil._compat import defaultdict
 from quickapp.library.app.quickapp_imp import QuickApp
 from quickapp.utils.script_utils import UserError
 import logging
 from quickapp.library.app.quickapp_interface import QuickAppBase
+from collections import defaultdict
 
 class QuickMultiCmd(QuickApp):
     
@@ -14,9 +14,6 @@ class QuickMultiCmd(QuickApp):
 
 class QuickMultiCmdApp(QuickAppBase):
     __metaclass__ = ABCMeta
- 
-#     def __init__(self, logger=None):
-#         QuickAppBase.__init__(self)
     
     def define_program_options(self, params):
         self.define_multicmd_options(params)

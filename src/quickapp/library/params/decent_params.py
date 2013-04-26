@@ -105,20 +105,21 @@ class DecentParams():
             returns: values, given, argv
         """
         
-        parser.add_argument('remainder', nargs=argparse.REMAINDER)
+        if self.accepts_extra:
+            parser.add_argument('remainder', nargs=argparse.REMAINDER)
 
         try:
-            argparse_res, argv = parser.parse_known_args(args)
+            argparse_res, _ = parser.parse_known_args(args)
         except SystemExit:
             raise
-            # raise Exception(e)  # TODO
         
-        
-        extra = argparse_res.remainder
-#         print argv, extra
-#         assert not argv
-        
+        if self.accepts_extra:
+            extra = argparse_res.remainder
+        else:
+            extra = []
+            
         values, given = self._interpret_args(argparse_res)
+        # TODO: raise if extra is given
         return values, given, extra
     
     
@@ -160,10 +161,24 @@ class DecentParams():
                 values[k] = self.params[k].default
         return values, list(given) 
         
-    def _populate_parser(self, option_container):
-        params = sorted(self.params.values(), key=lambda x: x.order)
-        for p in params:
-            p.populate(option_container)
+    def _populate_parser(self, option_container, prog=None):
+        groups = set(p.group for p in self.params.values())
+        for g in groups:
+            
+            if g is None:  # normal arguments:
+                title = 'Arguments for %s' % prog 
+            else:
+                title = str(g)
+            description = None
+            group = option_container.add_argument_group(title=title, description=description)
+            g_params = [p for p in self.params.values() if p.group == g] 
+            for p in g_params:
+                p.populate(group)
+#                 
+#         print groups
+#         params = sorted(self.params.values(), key=lambda x: x.order)
+#         for p in params:
+#             
     
     def create_parser(self, prog=None, usage=None, epilog=None,
                           description=None):
@@ -178,7 +193,7 @@ class DecentParams():
         parser = MyParser(prog=prog, usage=usage, epilog=epilog,
                                         description=description,
                                         formatter_class=my_formatter)
-        self._populate_parser(parser)
+        self._populate_parser(option_container=parser, prog=prog)
         return parser
     
     

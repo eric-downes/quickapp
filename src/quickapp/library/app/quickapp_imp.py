@@ -14,9 +14,9 @@ import traceback
 import warnings
 from quickapp.library.context.resource_manager import ResourceManager
 from quickapp.library.context.compmake_context import CompmakeContext
+from quickapp.library.repmanager.report_manager import ReportManager
 
 
-   
 
 class QuickApp(QuickAppBase):
 
@@ -35,16 +35,20 @@ class QuickApp(QuickAppBase):
         script_name = self.get_prog_name()
         default_output_dir = 'out-%s/' % script_name
 
-        params.add_flag('contracts', help='Activate PyContracts')
-        params.add_flag('profile', help='Use Python Profiler')
-        params.add_string('output', short='o', help='Output directory',
-                               default=default_output_dir)
+        g = 'Generic arguments for Quickapp'
+        # TODO: use  add_help=False to ARgParsre
+        # params.add_flag('help', short='-h', help='Shows help message')
+        params.add_flag('contracts', help='Activate PyContracts', group=g)
+        params.add_flag('profile', help='Use Python Profiler', group=g)
+        params.add_string('output', short='o',
+                                    help='Output directory',
+                                    default=default_output_dir, group=g)
     
-        params.add_flag('console', help='Use Compmake console')
+        params.add_flag('console', help='Use Compmake console', group=g)
 
         params.add_string('command', short='c',
                       help="Command to pass to compmake for batch mode",
-                      default='make')
+                      default='make', group=g)
     
     def define_program_options(self, params):
         self._define_options_compmake(params)
@@ -76,7 +80,7 @@ class QuickApp(QuickAppBase):
            
         options = self.get_options()
         
-        if not options['contracts']:
+        if not options.contracts:
             msg = 'PyContracts disabled for speed. Use --contracts to activate.'
             self.logger.warning(msg)
             contracts.disable_all()
