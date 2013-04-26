@@ -9,7 +9,7 @@ class DecentParamsUserError(UserError):
 class DecentParam():
     
     def __init__(self, ptype, name, default=None, help=None,  # @ReservedAssignment
-                 compulsory=False, short=None, allow_multi=False):
+                 compulsory=False, short=None, allow_multi=False, group=None):
         self.ptype = ptype
         self.name = name
         self.default = default  
@@ -18,6 +18,7 @@ class DecentParam():
         self.short = short
         self.order = None
         self.allow_multi = allow_multi
+        self.group = group
         if self.default is not None:
             self.validate(self.default)
         

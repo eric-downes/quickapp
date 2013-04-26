@@ -9,6 +9,7 @@ from contracts import contract
 from contracts.interface import describe_value
 from pprint import pformat
 import sys
+import os
 
 
 class QuickAppBase(HasLogger):
@@ -35,10 +36,15 @@ class QuickAppBase(HasLogger):
         pass
     
     def get_program_description(self):
-        pass
+        klass = type(self)
+        return klass.__dict__.get('description', None)
     
     def get_usage(self):
-        pass
+        klass = type(self)
+        usage = klass.__dict__.get('usage', None)
+        if usage:
+            usage = usage.replace('%prog', self.get_prog_name())
+        return usage
     
     def get_epilog(self):
         pass
@@ -52,7 +58,7 @@ class QuickAppBase(HasLogger):
     def get_prog_name(self):
         klass = type(self)
         if not 'cmd' in klass.__dict__:
-            return sys.argv[0]
+            return os.path.basename(sys.argv[0])
         else:    
             return klass.__dict__['cmd']
     
