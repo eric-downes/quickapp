@@ -39,18 +39,21 @@ class DecentParams():
         self._add(DecentParam(ptype=str, name=name, **args))
 
     def add_required_string(self, name, **args):
+        _check_no_default_given(name, args)
         self._add(DecentParam(ptype=str, name=name, compulsory=True, **args))
         
     def add_float(self, name, **args):
         self._add(DecentParam(ptype=float, name=name, **args))
 
     def add_required_float(self, name, **args):
+        _check_no_default_given(name, args)
         self._add(DecentParam(ptype=float, name=name, compulsory=True, **args))
 
     def add_int(self, name, **args):
         self._add(DecentParam(ptype=int, name=name, **args))
 
     def add_required_int(self, name, **args):
+        _check_no_default_given(name, args)
         self._add(DecentParam(ptype=int, name=name, compulsory=True, **args))
 
     def add_string_list(self, name, **args):
@@ -218,3 +221,7 @@ class DecentParams():
         return dpr
 
             
+def _check_no_default_given(name, kwargs):
+    if 'default' in kwargs:
+        msg = 'Could not give default value for %r if it is required.' % name
+        raise ValueError(msg)
