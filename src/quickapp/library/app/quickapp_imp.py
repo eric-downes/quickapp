@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABCMeta
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem)
-from compmake.ui.ui import comp_prefix, get_comp_prefix
+from compmake import comp_prefix, get_comp_prefix
 from conf_tools.utils import indent
 from contracts import contract
 from quickapp import logger, QUICKAPP_COMPUTATION_ERROR

@@ -1,12 +1,12 @@
 from abc import abstractmethod, ABCMeta
 from quickapp.library.params.decent_params import DecentParams
-from quickapp.utils.has_logger import HasLogger
+from quickapp.utils import HasLogger
 import logging
 from conf_tools.utils.indent_string import indent
 import traceback
 from quickapp.utils.script_utils import UserError
 from contracts import contract
-from contracts.interface import describe_value
+from contracts import describe_value
 from pprint import pformat
 import sys
 import os

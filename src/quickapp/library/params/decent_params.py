@@ -33,7 +33,7 @@ class DecentParams():
         self.accepts_extra = True
           
     def add_flag(self, name, **args):
-        self._add(DecentParamFlag(ptype=bool, name=name, **args))
+        self._add(DecentParamFlag(ptype=bool, name=name, default=False, **args))
 
     def add_string(self, name, **args):
         self._add(DecentParam(ptype=str, name=name, **args))

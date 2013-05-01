@@ -6,10 +6,15 @@ from ...utils.script_utils import UserError
 class DecentParamsUserError(UserError):
     pass
 
+not_given = 'DefaultNotGiven'
+
 class DecentParam():
     
-    def __init__(self, ptype, name, default=None, help=None,  # @ReservedAssignment
+    def __init__(self, ptype, name, default=not_given, help=None,  # @ReservedAssignment
                  compulsory=False, short=None, allow_multi=False, group=None):
+        compulsory = default == not_given
+        if compulsory: 
+            default = None
         self.ptype = ptype
         self.name = name
         self.default = default  
@@ -21,6 +26,7 @@ class DecentParam():
         self.group = group
         if self.default is not None:
             self.validate(self.default)
+        
         
     def validate(self, value):
         self.check_type(value)
@@ -111,7 +117,7 @@ class DecentParamMultiple(DecentParam):
     """ Allow multiple values """    
     
     
-    def __init__(self, ptype, name, default=None, **args):
+    def __init__(self, ptype, name, default=not_given, **args):
         if default is not None:
             if not isinstance(default, list):
                 default = [default]
