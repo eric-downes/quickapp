@@ -37,7 +37,10 @@ class QuickAppBase(HasLogger):
     
     def get_program_description(self):
         klass = type(self)
-        return klass.__dict__.get('description', None)
+        docs = klass.__doc__
+        if not docs:
+            docs = klass.__dict__.get('description', None) 
+        return docs
     
     def get_usage(self):
         klass = type(self)

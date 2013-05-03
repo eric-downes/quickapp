@@ -118,7 +118,7 @@ class DecentParamMultiple(DecentParam):
     
     
     def __init__(self, ptype, name, default=not_given, **args):
-        if default is not None:
+        if default is not not_given:
             if not isinstance(default, list):
                 default = [default]
         DecentParam.__init__(self, ptype=ptype, name=name, default=default,

@@ -4,6 +4,7 @@ from quickapp.utils.script_utils import UserError
 import logging
 from quickapp.library.app.quickapp_interface import QuickAppBase
 from collections import defaultdict
+from quickapp import logger
 
 class QuickMultiCmd(QuickApp):
     
