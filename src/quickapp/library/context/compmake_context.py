@@ -6,13 +6,15 @@ from types import NoneType
 import os
 import warnings
 
+__all__ = ['CompmakeContext']
+
+
 class CompmakeContext():
 
     @contract(extra_dep='list', report_manager=ReportManager,
               resource_manager=ResourceManager)    
     def __init__(self, qapp, parent, job_prefix, report_manager, resource_manager,
                  output_dir, extra_dep=[]):
-#         assert isinstance(qapp, QuickApp)
         assert isinstance(parent, (CompmakeContext, NoneType))
         self._qapp = qapp
         self._parent = parent

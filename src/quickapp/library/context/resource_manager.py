@@ -3,6 +3,8 @@ from compmake import Promise
 from contracts import contract, describe_type
 from reprep.report_utils import StoreResults
 
+__all__ = ['ResourceManager']
+
 
 class ResourceManager():
     

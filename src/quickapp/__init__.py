@@ -23,3 +23,9 @@ QUICKAPP_USER_ERROR = 1
 from .utils import col_logging
 
 from .library import *
+
+from .library.app_commands.app_with_commands import QuickMultiCmdApp
+
+
+
+QuickApp.__module__ = 'quickapp'

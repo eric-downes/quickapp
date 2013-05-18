@@ -1,12 +1,12 @@
-from .. import logger, contract
-from .. import StoreResults
-from reprep import Report
 from compmake import comp_store
-from contracts import describe_type
+from contracts import contract, describe_type, describe_value
+from quickapp import logger
+from reprep import Report
+from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
 import os
 import time
-from contracts.interface import describe_value
+from pprint import pformat
 
 __all__ = ['ReportManager']
 
@@ -260,6 +260,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
 
 
 def make_sections(allruns, common=None):
+    # print allruns.keys()
     if common is None:
         common = {}
         
@@ -276,6 +277,12 @@ def make_sections(allruns, common=None):
     # Now choose the one with the least choices
     fields_size.sort(key=lambda x: x[1])
     
+    if not fields_size:
+        # [frozendict({'i': 1, 'n': 3}), frozendict({'i': 2, 'n': 3}), frozendict({}), frozendict({'i': 0, 'n': 3})]
+        msg = 'Not all records of the same type have the same fields'
+        msg += pformat(allruns.keys())
+        raise ValueError(msg)
+        
     field = fields_size[0][0]
     division = {}
     for value, samples in allruns.groups_by_field_value(field):

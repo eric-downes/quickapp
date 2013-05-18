@@ -1,7 +1,9 @@
 from contracts import contract, describe_type, describe_value
-from .. import Choice
+# from .. import Choice
 from ...utils.script_utils import UserError
+from quickapp.library.variations.variations import Choice
 
+__all__ = ['DecentParamsUserError']
 
 class DecentParamsUserError(UserError):
     pass

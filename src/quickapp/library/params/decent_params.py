@@ -1,11 +1,11 @@
-from . import (DecentParamFlag, DecentParam, DecentParamMultiple,
+from .decent_param import (DecentParamFlag, DecentParam, DecentParamMultiple,
     DecentParamChoice, DecentParamsUserError, DecentParamsResults)
 from contracts import contract
+from pprint import pformat
 from quickapp.library.variations import Choice
+from quickapp.utils.script_utils import UserError
 import argparse
 import warnings
-from pprint import pformat
-from quickapp.utils.script_utils import UserError
 
 __all__ = ['DecentParams']
 

@@ -1,34 +1,39 @@
+from .. import logger
+from ... import QUICKAPP_COMPUTATION_ERROR
+from ...utils import wrap_script_entry_point, UserError
+from ..context import CompmakeContext, ResourceManager
+from ..repmanager import ReportManager
+from .quickapp_interface import QuickAppBase
 from abc import abstractmethod, ABCMeta
 from compmake import (batch_command, compmake_console, read_rc_files,
-    use_filesystem)
-from compmake import comp_prefix, get_comp_prefix
+    use_filesystem, comp_prefix, get_comp_prefix)
 from conf_tools.utils import indent
 from contracts import contract
-from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
-from quickapp.library.app.quickapp_interface import QuickAppBase
-from quickapp.utils import wrap_script_entry_point, UserError
 import contracts
 import os
 import sys
 import traceback
 import warnings
-from quickapp.library.context.resource_manager import ResourceManager
-from quickapp.library.context.compmake_context import CompmakeContext
-from quickapp.library.repmanager.report_manager import ReportManager
 
+
+__all__ = ['QuickApp']
 
 
 class QuickApp(QuickAppBase):
+
+    """ Template for an application that uses compmake to define jobs. """
 
     __metaclass__ = ABCMeta
 
     # Interface to be implemented
     @abstractmethod
     def define_jobs_context(self, context):
+        """ Define jobs in the current context. """
         pass
 
     @abstractmethod
     def define_options(self, params):
+        """ Define options for the application. """
         pass
              
     def _define_options_compmake(self, params):
@@ -41,7 +46,7 @@ class QuickApp(QuickAppBase):
         params.add_flag('contracts', help='Activate PyContracts', group=g)
         params.add_flag('profile', help='Use Python Profiler', group=g)
         params.add_string('output', short='o',
-                                    help='Output directory',
+                          help='Output directory',
                                     default=default_output_dir, group=g)
     
         params.add_flag('console', help='Use Compmake console', group=g)
@@ -77,7 +82,6 @@ class QuickApp(QuickAppBase):
             # self.info('Parent not found')
             pass
             
-           
         options = self.get_options()
         
         if not options.contracts:
@@ -148,10 +152,11 @@ class QuickApp(QuickAppBase):
         is_quickapp = isinstance(instance, QuickApp) 
         
         try:
-
             # we are already in a context; just define jobs
-            child_context = context.child(qapp=self, name=child_name, extra_dep=extra_dep,
-                                          add_outdir=add_outdir, add_job_prefix=add_job_prefix)  # XXX
+            child_context = context.child(qapp=self, name=child_name,
+                                          extra_dep=extra_dep,
+                                          add_outdir=add_outdir,
+                                          add_job_prefix=add_job_prefix)  # XXX
         
             if isinstance(args, list):
                 instance.set_options_from_args(args)
@@ -203,97 +208,3 @@ def quickapp_main(quickapp_class, args=None, sys_exit=True):
                             args=args, sys_exit=sys_exit)
 
 
-  
-#         
-# # TODO: remove
-# def create_conf_name_digest(values, length=12):
-#     """ Create an hash for the given values """
-#     s = "-".join([str(values[x]) for x in sorted(values.keys())])
-#     h = hashlib.sha224(s).hexdigest()
-#     if len(h) > length:
-#         h = h[:length]
-#     return h
-
-
-# run_name = create_conf_name_digest(options, length=12)
-# self.logger.info('Configuration name: %r' % run_name)
-# (end)
-#         run_name = 'no-conf'
-# outdir = os.path.join(options.output, run_name)
-
-#
-# def create_conf_name(values, given, limit=32):
-#    cn = create_conf_name_values(values, given)
-#    if len(cn) > limit:
-#        cn = cn[:limit]  # TODO XXX
-#    return cn
-#    
-    
-#    
-# def create_conf_name_values(values, given):
-#    def make_short(a):
-#        if isinstance(a, Choice):
-#            s = ','.join([make_short(x) for x in a])
-#        else:
-#            s = str(a)
-#        if '/' in s:
-#            s = os.path.basename(s)
-#            s = os.path.splitext(s)[0]
-#            s = s.replace('.', '_')
-#        s = s.replace(',', '_')
-#        return s
-#    return "-".join([make_short(values[x]) for x in sorted(given)])
-#    
-#    
-    
-
-         
-        
-#     def old_stuff():
-#         combs = {}
-#         for params, choices in all_combinations(options, give_choices=True):
-#             i = len(combs)
-#             name = 'C%03d' % i
-#             warnings.warn('xx')
-#             combs[name] = dict(params=params, choices=choices, given=options.get_given())
-#                      
-#         app_params = None; 
-#         self.add_combs(outdir, combs, app_params)        
-# 
-#         def add_combs(self, outdir, combs, app_params):
-#             multiple = len(combs) > 1
-#             for name, x in combs.items():
-#                 params = x['params']
-#                 choices = x['choices']
-#                 given = x['given']
-#                 if multiple:
-#                     self.logger.info('Config %s: %s' % (name, choices))
-#                     comp_prefix(name) 
-#                 self._options = DecentParamsResults(params, given, app_params.params)
-#                 self._current_params = params
-#                 
-#                 self._output_dir = os.path.join(outdir, 'output', name)
-#     
-#                 self.define_jobs()
-#                 # TODO: check that we defined some jobs
-#                 
-#             if multiple:
-#                 comp_prefix()
-#     
-#     @staticmethod
-#     def choice(it):
-#         return Choice(it)
-#     # Other utility stuff
-#     
-#     @staticmethod
-#     def choice(it):
-#         return Choice(it)
-#     
-#     def comp_comb(self, *args, **kwargs):
-#         return comp_comb(*args, **kwargs)
-
-# new_contract('QuickApp', QuickApp)
-# new_contract('CompmakeContext', CompmakeContext)
- 
- 
- 

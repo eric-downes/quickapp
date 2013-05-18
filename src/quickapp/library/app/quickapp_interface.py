@@ -1,18 +1,27 @@
 from abc import abstractmethod, ABCMeta
-from quickapp.library.params.decent_params import DecentParams
-from quickapp.utils import HasLogger
-import logging
-from conf_tools.utils.indent_string import indent
-import traceback
-from quickapp.utils.script_utils import UserError
-from contracts import contract
-from contracts import describe_value
+from conf_tools.utils import indent
+from contracts import contract, describe_value
 from pprint import pformat
-import sys
+from quickapp.library.params.decent_params import DecentParams
+from quickapp.utils import HasLogger, UserError
+import logging
 import os
+import sys
+import traceback
+
+__all__ = ['QuickAppBase']
 
 
 class QuickAppBase(HasLogger):
+    """
+        class attributes used:
+        
+            cmd
+            usage
+            description (deprecated) => use docstring
+            
+    
+    """
     __metaclass__ = ABCMeta
 
     def __init__(self, parent=None):
@@ -26,48 +35,75 @@ class QuickAppBase(HasLogger):
     
     @abstractmethod
     def define_program_options(self, params):
-        """ Must be implemented """
+        """ Must be implemented by the subclass. """
         pass
 
     @abstractmethod
     @contract(returns='None|int')
     def go(self):
-        """ Must be implemented. Should return either None => success, or an integer error code. """
+        """ 
+            Must be implemented. This should return either None to mean success, 
+            or an integer error code. 
+        """
         pass
     
     def get_program_description(self):
+        """     
+            Returns a description for the program. This is by default
+            looked in the docstring or in the "description" attribute
+            (deprecated).
+        """
         klass = type(self)
         docs = klass.__doc__
         if not docs:
-            docs = klass.__dict__.get('description', None) 
+            docs = klass.__dict__.get('description', None)
+        if docs is None:
+            print('No description at all for %s' % klass) 
         return docs
     
     def get_usage(self):
+        """     
+            Returns an usage string for the program. The pattern ``%prog``
+            will be substituted with the name of the program.
+        """
         klass = type(self)
         usage = klass.__dict__.get('usage', None)
-        if usage:
-            usage = usage.replace('%prog', self.get_prog_name())
         return usage
     
     def get_epilog(self):
+        """     
+            Returns the string used as an epilog in the help text. 
+        """
         pass
     
-    def get_options(self):
-        return self._options
-
-    def get_parent(self):
-        return self.parent
-        
     def get_prog_name(self):
+        """     
+            Returns the string used as the program name. By default
+            it is contained in the ``cmd`` attribute. 
+        """
         klass = type(self)
         if not 'cmd' in klass.__dict__:
             return os.path.basename(sys.argv[0])
         else:    
             return klass.__dict__['cmd']
     
+    
+    def get_options(self):
+        return self.options
+
+    def get_parent(self):
+        return self.parent
+        
+    
     @contract(args='None|list(str)', returns=int)
     def main(self, args=None, parent=None):
-        """ Returns an integer """ 
+        """ Main entry point. Returns an integer as an error code. """ 
+        
+        if "short" in type(self).__dict__:
+            msg = 'Class %s uses deprecated attribute "short".' % type(self)
+            msg += ' Use "description" instead.'
+            self.error(msg)
+            
         # Create the parameters and set them using args
         self.parent = parent
         self.set_options_from_args(args)
@@ -85,6 +121,7 @@ class QuickAppBase(HasLogger):
     @contract(config='dict(str:*)')
     def set_options_from_dict(self, config):
         """
+            Reads the configuration from a dictionary.
         
             raises: UserError: Wrong configuration, user's mistake.
                     Exception: all other exceptions
@@ -93,7 +130,7 @@ class QuickAppBase(HasLogger):
         self.define_program_options(params)
         
         try:
-            self._options = params.get_dpr_from_dict(config)
+            self.options = params.get_dpr_from_dict(config)
              
         except UserError:
             raise
@@ -110,7 +147,8 @@ class QuickAppBase(HasLogger):
     @contract(args='list(str)')
     def set_options_from_args(self, args):
         """
-        
+            Reads the configuration from command line arguments. 
+            
             raises: UserError: Wrong configuration, user's mistake.
                     Exception: all other exceptions
         """
@@ -119,10 +157,15 @@ class QuickAppBase(HasLogger):
         self.define_program_options(params)
         
         try:
-            self._options = params.get_dpr_from_args(prog=prog, args=args,
-                                                     usage=self.get_usage(),
-                                                     description=self.get_program_description(),
-                                                     epilog=self.get_epilog())
+            usage = self.get_usage()
+            if usage:
+                usage = usage.replace('%prog', self.get_prog_name())
+
+            desc = self.get_program_description()
+            epilog = self.get_epilog()
+            self.options = \
+                params.get_dpr_from_args(prog=prog, args=args, usage=usage,
+                                         description=desc, epilog=epilog)
         except UserError:
             raise
         except Exception as e:
@@ -134,4 +177,10 @@ class QuickAppBase(HasLogger):
             msg += indent(traceback.format_exc(e), '> ')
             raise Exception(msg)  # XXX class
         
+    @classmethod
+    def get_sys_main(cls):
+        """ Returns a function to be used as main function for a script. """
+        from quickapp.library.app.quickapp_imp import quickapp_main
+        quickapp_main(cls, args=None, sys_exit=True)
+    
  
