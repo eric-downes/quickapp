@@ -12,7 +12,7 @@ class ParamsTest(unittest.TestCase):
         p.add_string('vehicle', default='x')
         p.add_float('float1')
         p.add_float_list('floats')
-        p.add_int('int1')
+        p.add_int('int1', default=0)
         p.add_int_list('ints')
         p.add_string_choice('ciao', ['2', '1'], default='1')
         p.add_int_choice('ciao2', [2, 1], default=1)

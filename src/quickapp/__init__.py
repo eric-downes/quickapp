@@ -24,8 +24,10 @@ from .utils import col_logging
 
 from .library import *
 
-from .library.app_commands.app_with_commands import QuickMultiCmdApp
+from .library.app_commands.app_with_commands import QuickMultiCmdApp, add_subcommand
+from .library.context.resource_manager import ResourceManager
 
 
-
-QuickApp.__module__ = 'quickapp'
+symbols = [QuickMultiCmdApp, QuickApp, add_subcommand, ResourceManager]
+for s in symbols: 
+    s.__module__ = 'quickapp'

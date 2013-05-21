@@ -1,9 +1,10 @@
 from abc import abstractmethod, ABCMeta
-from quickapp.utils import UserError
-import logging
-from quickapp import QuickAppBase, QuickApp
 from collections import defaultdict
+from conf_tools.utils import indent, termcolor_colored
+from quickapp import QuickAppBase, QuickApp
+from quickapp.utils import UserError
 from reprep.utils import deprecated
+import logging
 
 
 __all__ = ['QuickMultiCmdApp', 'add_subcommand']
@@ -15,6 +16,7 @@ class QuickMultiCmd(QuickApp):
      
     
 class QuickMultiCmdAppMeta(ABCMeta):
+    
     """ A way to create the accessory <cls>.sub 
         which is the subclass for commands. """
     def __init__(appcls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
@@ -26,8 +28,11 @@ class QuickMultiCmdAppMeta(ABCMeta):
         
         class Register(ABCMeta):
             def __init__(cls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
+                if not 'cmd' in clsdict:
+                    print('skpping %r' % cls)
+                    return
                 # print('Automatically registering %s>%s' % (cls, clsname))
-                if clsname == 'SubCmd':
+                if clsname in  ['SubCmd']:
                     return
                 cmds = QuickMultiCmdApp.subs[appcls]
                 cmds.append(cls)
@@ -59,11 +64,11 @@ class QuickMultiCmdApp(QuickAppBase):
     def initial_setup(self):
         pass
 
-    def get_usage(self):
-        names = self._get_subs_names()
+    @classmethod
+    def get_usage(cls):
+        names = cls._get_subs_names()
         commands = ' | '.join(names)
-
-        return '%prog ' + '[general options] {%s} [command options]' % commands
+        return '%prog ' + '[--config DIR1:DIR2:...] {%s} [command options]' % commands
     
     def go(self):
         self.initial_setup()
@@ -96,38 +101,59 @@ class QuickMultiCmdApp(QuickAppBase):
         
         sub_inst.main(args=cmd_args, parent=self)
         
-    def get_epilog(self):
-        subs = self._get_subs()
+    @classmethod
+    def get_epilog(cls):
+        subs = cls._get_subs()
         if not subs:
             return 'Warning: no commands defined.'
             
-        s = "Commands: \n"        
-        for sub in self._get_subs():
-            cmd_name = sub.cmd
-            cmd_short = sub.__dict__.get('short', 'No description available')
-            s += "  %30s  %s\n" % (cmd_name, cmd_short)
-             
+        s = "Commands: \n"
+        s += cls.get_epilog_commands()             
         return s
     
-    def _get_subs_names_fmt(self):
+    
+    @classmethod
+    def get_epilog_commands(cls):
+        s = ""
+        
+        for sub in cls._get_subs():
+            cmd_name = sub.cmd
+            # XXX: fixme
+            cmd_short = sub.get_short_description()
+            
+            cmd_name = termcolor_colored(cmd_name, attrs=['bold'])
+            s += "  %30s  %s\n" % (cmd_name, cmd_short)
+            if issubclass(sub, QuickMultiCmdApp):
+                s += '\n'
+                s += indent(sub.get_epilog_commands(), ' ' * 7)
+                s += '\n'
+                 
+        return s
+    
+    
+    @classmethod
+    def _get_subs_names_fmt(cls):
         """ Returns 'cmd1, cmd2, cmd3; """
-        names = self._get_subs_names()
+        names = cls._get_subs_names()
         possibilities = ', '.join('%r' % x for x in names)
         return possibilities
         
-    def _get_subs_as_dict(self):
+    @classmethod
+    def _get_subs_as_dict(cls):
         """ Returns a dict: cmd_name -> cmd """
-        return dict([(x.cmd, x) for x in self._get_subs()])
+        return dict([(x.cmd, x) for x in cls._get_subs()])
 
-    def _get_subs_names(self):
-        return [x.cmd for x in self._get_subs()]
+    @classmethod
+    def _get_subs_names(cls):
+        return [x.cmd for x in cls._get_subs()]
     
-    def _get_subs(self):
-        this_class = type(self)
-        return QuickMultiCmdApp.subs[this_class]
+    @classmethod
+    def _get_subs(cls):
+        return QuickMultiCmdApp.subs[cls]
 
-    # QuickMultiCmdApp subclass -> (string -> QuickApp) 
+    # QuickMultiCmdApp subclass -> (list of  QuickAppBase) 
     subs = defaultdict(list)
+    
         
 @deprecated
 def add_subcommand(app, cmd):

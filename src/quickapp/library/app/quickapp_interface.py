@@ -47,45 +47,53 @@ class QuickAppBase(HasLogger):
         """
         pass
     
-    def get_program_description(self):
+    
+    
+    @classmethod
+    def get_program_description(cls):
         """     
             Returns a description for the program. This is by default
             looked in the docstring or in the "description" attribute
             (deprecated).
         """
-        klass = type(self)
-        docs = klass.__doc__
+        docs = cls.__doc__
         if not docs:
-            docs = klass.__dict__.get('description', None)
+            docs = cls.__dict__.get('description', None)
         if docs is None:
-            print('No description at all for %s' % klass) 
+            print('No description at all for %s' % cls) 
         return docs
     
-    def get_usage(self):
+    @classmethod
+    def get_short_description(cls):
+        return cls.get_program_description()
+
+    
+    @classmethod
+    def get_usage(cls):
         """     
             Returns an usage string for the program. The pattern ``%prog``
             will be substituted with the name of the program.
         """
-        klass = type(self)
-        usage = klass.__dict__.get('usage', None)
+        usage = cls.__dict__.get('usage', None)
         return usage
     
-    def get_epilog(self):
+    @classmethod
+    def get_epilog(cls):
         """     
             Returns the string used as an epilog in the help text. 
         """
-        pass
+        return None
     
-    def get_prog_name(self):
+    @classmethod
+    def get_prog_name(cls):
         """     
             Returns the string used as the program name. By default
             it is contained in the ``cmd`` attribute. 
         """
-        klass = type(self)
-        if not 'cmd' in klass.__dict__:
+        if not 'cmd' in cls.__dict__:
             return os.path.basename(sys.argv[0])
         else:    
-            return klass.__dict__['cmd']
+            return cls.__dict__['cmd']
     
     
     def get_options(self):
@@ -152,17 +160,18 @@ class QuickAppBase(HasLogger):
             raises: UserError: Wrong configuration, user's mistake.
                     Exception: all other exceptions
         """
-        prog = self.get_prog_name()
+        cls = type(self)
+        prog = cls.get_prog_name()
         params = DecentParams()
         self.define_program_options(params)
         
         try:
-            usage = self.get_usage()
+            usage = cls.get_usage()
             if usage:
-                usage = usage.replace('%prog', self.get_prog_name())
+                usage = usage.replace('%prog', prog)
 
-            desc = self.get_program_description()
-            epilog = self.get_epilog()
+            desc = cls.get_program_description()
+            epilog = cls.get_epilog()
             self.options = \
                 params.get_dpr_from_args(prog=prog, args=args, usage=usage,
                                          description=desc, epilog=epilog)
@@ -181,6 +190,6 @@ class QuickAppBase(HasLogger):
     def get_sys_main(cls):
         """ Returns a function to be used as main function for a script. """
         from quickapp.library.app.quickapp_imp import quickapp_main
-        quickapp_main(cls, args=None, sys_exit=True)
+        return lambda: quickapp_main(cls, args=None, sys_exit=True)
     
  
