@@ -1,7 +1,7 @@
+from decent_params import DecentParams, UserError
 from nose.tools import raises
-from quickapp import DecentParams
 import unittest
-from quickapp.utils.script_utils import UserError
+
 
 
 class ParamsTest(unittest.TestCase):
@@ -41,8 +41,9 @@ class ParamsTest(unittest.TestCase):
     def decent_params_test2(self):
         """ Test compulsory """
         p = DecentParams()
-        p.add_string('a', compulsory=True)
+        p.add_string('a')
         p.add_string('b')
-        p.parse_args(['--b', '1'])
+        res = p.parse_args(['--b', '1'])
+        print res
         
         

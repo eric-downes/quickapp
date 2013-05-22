@@ -19,19 +19,7 @@ def wrap_script_entry_point(function, logger,
          just print the error, and return 1.
         
     """
-#     if args is None:
-#         args = sys.argv[1:]
-#     try:
-#         ret = function(args)
-#         if ret is None:
-#             ret = 0
-#         sys.exit(ret)
-#     except exceptions_no_traceback as e:
-#         logger.error(str(e))
-#         sys.exit(1)
-#     except Exception as e:
-#         logger.error(traceback.format_exc())
-#         sys.exit(2)
+
     ret = wrap_script_entry_point_noexit(function, logger, exceptions_no_traceback, args)
     if sys_exit:
         sys.exit(ret)

@@ -33,10 +33,14 @@ setup(name='QuickApp',
 	  version=version,
       download_url='http://github.com/AndreaCensi/quickapp/tarball/%s' % version,
       
+      entry_points={
+        'console_scripts': [
+       'comptests = comptests:main_comptests'
+       ]
+      },
       package_dir={'':'src'},
       packages=find_packages('src'),
       install_requires=['compmake', 'reprep', 'PyContracts'],
       tests_require=['nose'],
-      entry_points={},
 )
 

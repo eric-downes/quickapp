@@ -3,9 +3,6 @@ from compmake import comp
 from reprep.report_utils import StoreResults
 
 
-class Choice(list):
-    pass 
-
 def all_combinations(params, give_choices=False):
     choices = sorted([k for k in params if isinstance(params[k], Choice)])
     values = [list(params[k]) for k in choices]

@@ -15,7 +15,7 @@
 #     
 #     def define_options(self, params):
 #         params.add_int('param1', help='First parameter', default=1)
-#         params.add_int_list('param2', help='Second parameter', compulsory=True)
+#         params.add_int_list('param2', help='Second parameter')
 #         
 #     def define_jobs_context(self, context):
 #         options = self.get_options()

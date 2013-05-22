@@ -1,14 +1,12 @@
 from .decent_param import (DecentParamFlag, DecentParam, DecentParamMultiple,
     DecentParamChoice, DecentParamsUserError, DecentParamsResults)
 from contracts import contract
+from decent_params import UserError, Choice
 from pprint import pformat
-from quickapp.library.variations import Choice
-from quickapp.utils.script_utils import UserError
 import argparse
 import warnings
 
 __all__ = ['DecentParams']
-
 
 class DecentParams():
     
@@ -37,24 +35,12 @@ class DecentParams():
 
     def add_string(self, name, **args):
         self._add(DecentParam(ptype=str, name=name, **args))
-
-    def add_required_string(self, name, **args):
-        _check_no_default_given(name, args)
-        self._add(DecentParam(ptype=str, name=name, compulsory=True, **args))
         
     def add_float(self, name, **args):
         self._add(DecentParam(ptype=float, name=name, **args))
 
-    def add_required_float(self, name, **args):
-        _check_no_default_given(name, args)
-        self._add(DecentParam(ptype=float, name=name, compulsory=True, **args))
-
     def add_int(self, name, **args):
         self._add(DecentParam(ptype=int, name=name, **args))
-
-    def add_required_int(self, name, **args):
-        _check_no_default_given(name, args)
-        self._add(DecentParam(ptype=int, name=name, compulsory=True, **args))
 
     def add_string_list(self, name, **args):
         self._add(DecentParamMultiple(ptype=str, name=name, **args))
@@ -125,7 +111,6 @@ class DecentParams():
         # TODO: raise if extra is given
         return values, given, extra
     
-    
     def _interpret_args(self, argparse_res):
         parsed = vars(argparse_res)
         return self._interpret_args2(parsed)
@@ -135,7 +120,8 @@ class DecentParams():
         values = dict()
         given = set()
         for k, v in self.params.items():
-            if v.compulsory and parsed[k] is None:
+            # if v.compulsory and parsed[k] is None:
+            if v.compulsory and (not k in parsed or parsed[k] is None):
                 msg = 'Compulsory option %r not given.' % k
                 raise DecentParamsUserError(msg)
             
@@ -220,8 +206,3 @@ class DecentParams():
         dpr = DecentParamsResults(values, given, self, extra=extra)
         return dpr
 
-            
-def _check_no_default_given(name, kwargs):
-    if 'default' in kwargs:
-        msg = 'Could not give default value for %r if it is required.' % name
-        raise ValueError(msg)

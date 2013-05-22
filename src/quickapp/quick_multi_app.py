@@ -1,8 +1,9 @@
+from .quick_app import QuickApp
+from .quick_app_base import QuickAppBase
 from abc import abstractmethod, ABCMeta
 from collections import defaultdict
 from conf_tools.utils import indent, termcolor_colored
-from quickapp import QuickAppBase, QuickApp
-from quickapp.utils import UserError
+from decent_params import UserError
 from reprep.utils import deprecated
 import logging
 
@@ -29,7 +30,7 @@ class QuickMultiCmdAppMeta(ABCMeta):
         class Register(ABCMeta):
             def __init__(cls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
                 if not 'cmd' in clsdict:
-                    print('skpping %r' % cls)
+                    # print('skpping %r' % cls)
                     return
                 # print('Automatically registering %s>%s' % (cls, clsname))
                 if clsname in  ['SubCmd']:

@@ -50,6 +50,9 @@ def minimal_names(objects):
             
         Returns prefix, minimal, postfix
     """
+    if len(objects) == 1:
+        return '', objects, ''
+    
     # find the common prefix
     prefix = os.path.commonprefix(objects)
     # invert strings
@@ -94,6 +97,9 @@ def minimal_names_at_boundaries(objects, separators=['_', '-']):
             
         Returns prefix, minimal, postfix
     """
+    
+    if len(objects) == 1:
+        return '', objects, ''
     
     s0 = separators[0]
     

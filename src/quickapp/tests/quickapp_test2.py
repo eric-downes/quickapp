@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from quickapp import QuickApp, QUICKAPP_USER_ERROR, QUICKAPP_COMPUTATION_ERROR
+from quickapp import (QuickApp, QUICKAPP_USER_ERROR, QUICKAPP_COMPUTATION_ERROR,
+    quickapp_main)
 from reprep import Report
-from quickapp.library.app.quickapp_imp import quickapp_main
 from unittest.case import TestCase
 
 def actual_computation(param1, param2):
@@ -24,7 +24,7 @@ class QuickAppDemo2(QuickApp):
     
     def define_options(self, params):
         params.add_int('param1', help='First parameter', default=1)
-        params.add_int('param2', help='Second parameter', compulsory=True)
+        params.add_int('param2', help='Second parameter')
         
     def define_jobs_context(self, context):
         options = self.get_options()

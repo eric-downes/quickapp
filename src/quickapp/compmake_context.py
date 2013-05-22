@@ -1,5 +1,5 @@
-from . import ResourceManager
-from ..repmanager import ReportManager
+from .resource_manager import ResourceManager
+from .report_manager import ReportManager
 from compmake import Promise, comp, comp_prefix
 from contracts import contract, describe_type
 from types import NoneType
@@ -64,7 +64,6 @@ class CompmakeContext():
         self.n_comp_invocations += 1
         if self._parent is not None:
             self._parent.count_comp_invocations()
-
 
     def get_output_dir(self):
         """ Returns a suitable output directory for data files """

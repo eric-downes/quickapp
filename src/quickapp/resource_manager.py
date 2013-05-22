@@ -1,13 +1,18 @@
 from collections import defaultdict
 from compmake import Promise
+from conf_tools.utils import indent
 from contracts import contract, describe_type
 from reprep.report_utils import StoreResults
+import traceback
 
 __all__ = ['ResourceManager']
 
 
 class ResourceManager():
-    
+
+    class CannotProvide(Exception):
+        pass
+
     def __init__(self, context):
         self.allresources = StoreResults()
         self.providers = defaultdict(list)
@@ -42,6 +47,12 @@ class ResourceManager():
                     break
                 except ResourceManager.CannotProvide as e:
                     errors.append(e)
+                except Exception as e:
+                    msg = 'Error while trying to get resource.\n'
+                    msg += ' type: %r params: %s\n' % (rtype, params)
+                    msg += 'While calling provider %r:\n' % provider
+                    msg += indent(traceback.format_exc(e), '> ')
+                    raise Exception(msg)
             else:
                 msg = 'No provider could create this resource.'
                 msg += errors
@@ -49,9 +60,6 @@ class ResourceManager():
             
             self.set_resource(res, rtype, **params)
             return res
-    
-    class CannotProvide(Exception):
-        pass
     
     def _make_prefix(self, rtype, **params):
         """ Creates the job prefix for the given resource. """

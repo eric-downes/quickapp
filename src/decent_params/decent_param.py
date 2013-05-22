@@ -1,7 +1,5 @@
 from contracts import contract, describe_type, describe_value
-# from .. import Choice
-from ...utils.script_utils import UserError
-from quickapp.library.variations.variations import Choice
+from decent_params import UserError, Choice
 
 __all__ = ['DecentParamsUserError']
 
@@ -13,8 +11,8 @@ not_given = 'DefaultNotGiven'
 class DecentParam():
     
     def __init__(self, ptype, name, default=not_given, help=None,  # @ReservedAssignment
-                 compulsory=False, short=None, allow_multi=False, group=None):
-        compulsory = default == not_given
+                short=None, allow_multi=False, group=None):
+        compulsory = (default == not_given)
         if compulsory: 
             default = None
         self.ptype = ptype
@@ -129,7 +127,8 @@ class DecentParamMultiple(DecentParam):
     @contract(s='str')
     def value_from_string(self, s):
         values = [DecentParam.value_from_string(self, x) for x in s.split(',')]
-        return Choice(values)
+#         return Choice(values)
+        return values
 
     def validate(self, value):
         if not isinstance(value, list):

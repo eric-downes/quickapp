@@ -1,9 +1,9 @@
 from abc import abstractmethod, ABCMeta
 from conf_tools.utils import indent
 from contracts import contract, describe_value
+from decent_params import DecentParams, UserError
 from pprint import pformat
-from quickapp.library.params.decent_params import DecentParams
-from quickapp.utils import HasLogger, UserError
+from .utils import HasLogger
 import logging
 import os
 import sys
@@ -56,16 +56,23 @@ class QuickAppBase(HasLogger):
             looked in the docstring or in the "description" attribute
             (deprecated).
         """
-        docs = cls.__doc__
-        if not docs:
+        if cls.__doc__ is not None:
+            # use docstring
+            docs = cls.__doc__
+        else:
             docs = cls.__dict__.get('description', None)
+        
         if docs is None:
-            print('No description at all for %s' % cls) 
+            print('No description at all for %s' % cls)  # XXX 
+        
         return docs
     
     @classmethod
     def get_short_description(cls):
-        return cls.get_program_description()
+        longdesc = cls.get_program_description()
+        if longdesc is None:
+            return None
+        return longdesc.strip()  # Todo: extract first sentence
 
     
     @classmethod
@@ -189,7 +196,7 @@ class QuickAppBase(HasLogger):
     @classmethod
     def get_sys_main(cls):
         """ Returns a function to be used as main function for a script. """
-        from quickapp.library.app.quickapp_imp import quickapp_main
+        from quickapp import quickapp_main
         return lambda: quickapp_main(cls, args=None, sys_exit=True)
     
  

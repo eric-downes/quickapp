@@ -1,14 +1,14 @@
-from .. import logger
-from ... import QUICKAPP_COMPUTATION_ERROR
-from ...utils import wrap_script_entry_point, UserError
-from ..context import CompmakeContext, ResourceManager
-from ..repmanager import ReportManager
-from .quickapp_interface import QuickAppBase
+from .compmake_context import CompmakeContext
+from .quick_app_base import QuickAppBase
+from .report_manager import ReportManager
+from .resource_manager import ResourceManager
 from abc import abstractmethod, ABCMeta
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem, comp_prefix, get_comp_prefix)
 from conf_tools.utils import indent
 from contracts import contract
+from decent_params.utils import wrap_script_entry_point, UserError
+from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
 import contracts
 import os
 import sys
@@ -16,7 +16,7 @@ import traceback
 import warnings
 
 
-__all__ = ['QuickApp']
+__all__ = ['QuickApp', 'quickapp_main']
 
 
 class QuickApp(QuickAppBase):
@@ -166,12 +166,12 @@ class QuickApp(QuickAppBase):
             else:
                 assert False
             
-
             if not is_quickapp:
                 # self.info('Instance is not quickapp! %s' % type(instance))
                 self.child_context = child_context
                 res = instance.go()  
             else:
+                instance.context = child_context
                 res = instance.define_jobs_context(child_context)
                 
             # Add his jobs to our list of jobs
