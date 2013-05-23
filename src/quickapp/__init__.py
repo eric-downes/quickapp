@@ -21,6 +21,8 @@ from .quick_app_base import *
 from .quick_multi_app import *
 from .resource_manager import *
 from .quick_app import *
+from .compmake_context import *
+
 
 symbols = [QuickMultiCmdApp, QuickApp, add_subcommand, ResourceManager]
 for s in symbols: 

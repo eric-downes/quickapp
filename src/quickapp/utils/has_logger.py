@@ -11,6 +11,9 @@ class HasLogger(object):
     def info(self, *args, **kwargs):
         return self.logger.info(*args, **kwargs)
 
+    def warn(self, *args, **kwargs):
+        return self.logger.warn(*args, **kwargs)
+
     def error(self, *args, **kwargs):
         return self.logger.error(*args, **kwargs)
     

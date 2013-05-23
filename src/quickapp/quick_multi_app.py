@@ -10,11 +10,6 @@ import logging
 
 __all__ = ['QuickMultiCmdApp', 'add_subcommand']
  
- 
-# TODO: remove this class
-class QuickMultiCmd(QuickApp):
-    pass
-     
     
 class QuickMultiCmdAppMeta(ABCMeta):
     
