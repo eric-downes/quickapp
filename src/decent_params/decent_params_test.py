@@ -1,6 +1,7 @@
 from decent_params import DecentParams, UserError
 from nose.tools import raises
 import unittest
+from decent_params.exceptions import DecentParamsUnknownArgs
 
 
 
@@ -46,4 +47,10 @@ class ParamsTest(unittest.TestCase):
         res = p.parse_args(['--b', '1'])
         print res
         
+    
+    def decent_params_test_notdefined(self):
+        p = DecentParams()
+        p.add_string('vehicle', default='x')
+        
+        self.assertRaises(DecentParamsUnknownArgs, p.parse_args, ['--b', '1'])
         

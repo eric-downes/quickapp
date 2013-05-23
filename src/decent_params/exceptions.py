@@ -1,0 +1,29 @@
+from decent_params.utils import UserError
+
+__all__ = ['DecentParamsUserError', 'DecentParamsUknownArgs']
+
+
+class DecentParamsDefinitionError(Exception):
+    """ These are raised when constructing data structures """
+    pass
+    
+class DecentParamsUserError(UserError):
+    """ These are raised when interrpreting arguments """
+    def __init__(self, dp, msg):
+        self.dp = dp
+        self.msg = msg
+        s = msg
+        s += '\n' + str(dp)
+        Exception.__init__(self, s)
+
+class DecentParamsSemanticError(DecentParamsUserError):
+    def __init__(self, dp, p, msg):
+        self.p = p
+        s = msg + '\n while interpreting parameter %s ' % p
+        DecentParamsUserError.__init__(self, dp, s)
+    
+class DecentParamsUnknownArgs(DecentParamsUserError):
+    
+    def __init__(self, dp, unknown):
+        msg = 'Could not interpret %r.' % unknown
+        DecentParamsUserError.__init__(self, dp, msg)

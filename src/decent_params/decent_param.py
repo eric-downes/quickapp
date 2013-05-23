@@ -1,10 +1,9 @@
 from contracts import contract, describe_type, describe_value
-from decent_params import UserError, Choice
+from decent_params import Choice
+from decent_params.exceptions import DecentParamsUserError, \
+    DecentParamsSemanticError
 
-__all__ = ['DecentParamsUserError']
 
-class DecentParamsUserError(UserError):
-    pass
 
 not_given = 'DefaultNotGiven'
 
@@ -27,7 +26,11 @@ class DecentParam():
         if self.default is not None:
             self.validate(self.default)
         
+        self.params = None  # the DecentParams structure 
         
+    def __repr__(self):
+        return 'DecentParam(%r,%r)' % (self.ptype, self.name)
+    
     def validate(self, value):
         self.check_type(value)
  
@@ -50,7 +53,7 @@ class DecentParam():
         if self.ptype == bool:
             return bool(s)  # TODO: check
         msg = 'Unknown type %r' % self.ptype
-        raise ValueError(msg)
+        raise DecentParamsSemanticError(self.params, self, msg)
     
     def check_type(self, x):
         expected = self.ptype
@@ -61,7 +64,7 @@ class DecentParam():
             msg = ("For param %r, expected %s, got %s.\n%s" % 
                     (self.name, self.ptype, describe_type(x),
                      describe_value(x)))
-            raise DecentParamsUserError(msg)
+            raise DecentParamsSemanticError(self.params, self, msg)
     
     def get_desc(self):
         desc = self.desc
@@ -95,6 +98,9 @@ class DecentParamsResults():
     
         for k, v in values.items():
             self.__dict__[k] = v 
+    
+    def __repr__(self):
+        return 'DecentParamsResults(%r,given=%r,extra=%r)' % (self._values, self._given, self._extra)
     
     def __str__(self):
         return 'DPR(values=%s;given=%s;extra=%s)' % (self._values, self._given, self._extra)
@@ -133,7 +139,7 @@ class DecentParamMultiple(DecentParam):
     def validate(self, value):
         if not isinstance(value, list):
             msg = "Should be a list, not %r" % value
-            raise DecentParamsUserError(msg)
+            raise DecentParamsSemanticError(self.params, self, msg)
         for x in value:
             self.check_type(x)
     
@@ -158,5 +164,5 @@ class DecentParamChoice(DecentParam):
     def validate(self, value):
         if not value in self.choices:
             msg = 'Not %r in %r' % (value, self.choices)
-            raise DecentParamsUserError(msg)
+            raise DecentParamsSemanticError(self.params, self, msg)
     

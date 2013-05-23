@@ -5,6 +5,9 @@ from decent_params import UserError, Choice
 from pprint import pformat
 import argparse
 import warnings
+from argparse import RawTextHelpFormatter
+from decent_params.exceptions import DecentParamsUnknownArgs, \
+    DecentParamsDefinitionError
 
 __all__ = ['DecentParams']
 
@@ -22,7 +25,7 @@ class DecentParams():
     def _add(self, p):
         if p.name in self.params:
             msg = "I already know param %r." % p.name
-            raise ValueError(msg)
+            raise DecentParamsDefinitionError(msg)
         p.order = len(self.params)
         self.params[p.name] = p
         
@@ -78,9 +81,9 @@ class DecentParams():
             argparse_res, argv = parser.parse_known_args(args)
             if argv:
                 msg = 'Extra arguments found: %s' % argv
-                raise ValueError(msg)
+                raise DecentParamsUnknownArgs(self, msg)
         except SystemExit:
-            raise
+            raise  # XXX
             # raise Exception(e)  # TODO
         
         values, given = self._interpret_args(argparse_res)
@@ -98,15 +101,18 @@ class DecentParams():
             parser.add_argument('remainder', nargs=argparse.REMAINDER)
 
         try:
-            argparse_res, _ = parser.parse_known_args(args)
+            argparse_res, unknown = parser.parse_known_args(args)
         except SystemExit:
-            raise
+            raise  # XXX
         
+        if unknown:
+            raise DecentParamsUnknownArgs(self, unknown)
+    
         if self.accepts_extra:
             extra = argparse_res.remainder
         else:
             extra = []
-            
+
         values, given = self._interpret_args(argparse_res)
         # TODO: raise if extra is given
         return values, given, extra
@@ -123,7 +129,7 @@ class DecentParams():
             # if v.compulsory and parsed[k] is None:
             if v.compulsory and (not k in parsed or parsed[k] is None):
                 msg = 'Compulsory option %r not given.' % k
-                raise DecentParamsUserError(msg)
+                raise DecentParamsUserError(self, msg)
             
             warnings.warn('Not sure below')
             # if parsed[k] is not None:
@@ -172,12 +178,13 @@ class DecentParams():
     def create_parser(self, prog=None, usage=None, epilog=None,
                           description=None):
         def my_formatter(prog):
-            return argparse.RawTextHelpFormatter(prog=prog, max_help_position=90, width=None)
+            return RawTextHelpFormatter(prog=prog,
+                                        max_help_position=90, width=None)
         
         class MyParser(argparse.ArgumentParser):
             
-            def error(self, message):
-                raise UserError(message)
+            def error(self, msg):
+                raise DecentParamsUserError(self, msg)
             
         parser = MyParser(prog=prog, usage=usage, epilog=epilog,
                                         description=description,
@@ -194,11 +201,11 @@ class DecentParams():
         values, given, extra = self.parse_using_parser_extra(parser, args)
         if extra and not self.accepts_extra:
             msg = 'Found extra arguments not accepted: %s' % extra
-            raise ValueError(msg)
+            raise DecentParamsUserError(self, msg)
         dpr = DecentParamsResults(values, given, self, extra=extra)
         return dpr
+    
  
-
     @contract(config='dict(str:*)')
     def get_dpr_from_dict(self, config):
         extra = []  # TODO 
