@@ -16,7 +16,7 @@ class DemoApp(QuickMultiCmdApp):
         
 
 
-class DemoAppCmd1(DemoApp.sub):
+class DemoAppCmd1(DemoApp.get_sub()):
     cmd = 'cmd1'
     short = 'First command'
     

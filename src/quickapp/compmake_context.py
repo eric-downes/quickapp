@@ -5,6 +5,7 @@ from contracts import contract, describe_type
 from types import NoneType
 import os
 import warnings
+from conf_tools.master import GlobalConfig
 
 __all__ = ['CompmakeContext']
 
@@ -48,7 +49,7 @@ class CompmakeContext():
         return job_checkpoint
     
     @contract(returns=Promise)
-    def comp(self, *args, **kwargs):
+    def comp(self, f, *args, **kwargs):
         """ 
             Simple wrapper for Compmake's comp function. 
             Use this instead of "comp". """
@@ -56,10 +57,20 @@ class CompmakeContext():
         comp_prefix(self._job_prefix)
         extra_dep = self._extra_dep + kwargs.get('extra_dep', [])
         kwargs['extra_dep'] = extra_dep
-        promise = comp(*args, **kwargs)
+        promise = comp(f, *args, **kwargs)
         self._jobs[promise.job_id] = promise
         return promise
-
+    
+    @contract(returns=Promise)
+    def comp_config(self, f, *args, **kwargs):
+        """ 
+            We automatically save the GlobalConfig state.
+        """
+        config_state = GlobalConfig.get_state()
+        # so that compmake can use a good name
+        kwargs['command_name'] = f.__name__
+        return self.comp(wrap_state, config_state, f, *args, **kwargs)
+    
     def count_comp_invocations(self):
         self.n_comp_invocations += 1
         if self._parent is not None:
@@ -149,6 +160,10 @@ class CompmakeContext():
     def get_report_manager(self):
         return self._report_manager
 
- 
+def wrap_state(config_state, f, *args, **kwargs):
+    config_state.restore()
+    return f(*args, **kwargs)
+    
+    
 def checkpoint(name, prev_jobs):
     pass

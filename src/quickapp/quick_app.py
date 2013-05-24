@@ -127,7 +127,6 @@ class QuickApp(QuickAppBase):
         else: 
             if not options.console:
                 batch_result = batch_command(options.command)
-                print('batch_command returned %s' % batch_result)
                 if isinstance(batch_result, str):
                     ret = QUICKAPP_COMPUTATION_ERROR
                 elif isinstance(batch_result, int):

@@ -4,6 +4,7 @@ from contracts import contract, describe_value
 from decent_params import DecentParams, UserError
 from pprint import pformat
 from .utils import HasLogger
+from quickapp import logger
 import logging
 import os
 import sys
@@ -63,7 +64,7 @@ class QuickAppBase(HasLogger):
             docs = cls.__dict__.get('description', None)
         
         if docs is None:
-            print('No description at all for %s' % cls)  # XXX 
+            logger.warn('No description at all for %s' % cls) 
         
         return docs
     

@@ -1,4 +1,3 @@
-from .quick_app import QuickApp
 from .quick_app_base import QuickAppBase
 from abc import abstractmethod, ABCMeta
 from collections import defaultdict
@@ -9,44 +8,44 @@ import logging
 
 
 __all__ = ['QuickMultiCmdApp', 'add_subcommand']
- 
-    
-class QuickMultiCmdAppMeta(ABCMeta):
-    
-    """ A way to create the accessory <cls>.sub 
-        which is the subclass for commands. """
-    def __init__(appcls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
-        
-        if clsname == 'QuickMultiCmdApp':
-            return
-        
-        # print('Automatically triggered %s' % (appcls))
-        
-        class Register(ABCMeta):
-            def __init__(cls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
-                if not 'cmd' in clsdict:
-                    # print('skpping %r' % cls)
-                    return
-                # print('Automatically registering %s>%s' % (cls, clsname))
-                if clsname in  ['SubCmd']:
-                    return
-                cmds = QuickMultiCmdApp.subs[appcls]
-                cmds.append(cls)
-
-        class SubCmd(QuickAppBase):
-            __metaclass__ = Register
-            
-            def get_parent(self):
-                """ Returns the QuickMultiCmdApp parent """
-                return self.parent
-            
-        appcls.sub = SubCmd
-    
-        # print 'Created ', appcls.sub
+#  
+#     
+# class QuickMultiCmdAppMeta(ABCMeta):
+#     
+#     """ A way to create the accessory <cls>.sub 
+#         which is the subclass for commands. """
+#     def __init__(appcls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
+#         
+#         if clsname == 'QuickMultiCmdApp':
+#             return
+#         
+#         # print('Automatically triggered %s' % (appcls))
+#         
+#         class Register(ABCMeta):
+#             def __init__(cls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
+#                 if not 'cmd' in clsdict:
+#                     # print('skpping %r' % cls)
+#                     return
+#                 # print('Automatically registering %s>%s' % (cls, clsname))
+#                 if clsname in  ['SubCmd']:
+#                     return
+#                 cmds = QuickMultiCmdApp.subs[appcls]
+#                 cmds.append(cls)
+# 
+#         class SubCmd(QuickAppBase):
+#             __metaclass__ = Register
+#             
+#             def get_parent(self):
+#                 """ Returns the QuickMultiCmdApp parent """
+#                 return self.parent
+#             
+#         appcls.sub = SubCmd
+#     
+#         # print 'Created ', appcls.sub
         
     
 class QuickMultiCmdApp(QuickAppBase):
-    __metaclass__ = QuickMultiCmdAppMeta
+#     __metaclass__ = QuickMultiCmdAppMeta
     
     def define_program_options(self, params):
         self.define_multicmd_options(params)
@@ -65,6 +64,32 @@ class QuickMultiCmdApp(QuickAppBase):
         names = cls._get_subs_names()
         commands = ' | '.join(names)
         return '%prog ' + '[--config DIR1:DIR2:...] {%s} [command options]' % commands
+    
+    
+    @classmethod
+    def get_sub(appcls):
+        """ Returns the subclass for the subcommands """
+        # mainly because eclipse does not see ".sub" as valid.
+        if not hasattr(appcls, 'sub'):
+            class Register(ABCMeta):
+                def __init__(cls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
+                    if not 'cmd' in clsdict:
+                        # print('skpping %r' % cls)
+                        return
+                    # print('Automatically registering %s>%s' % (cls, clsname))
+                    if clsname in  ['SubCmd']:
+                        return
+                    cmds = QuickMultiCmdApp.subs[appcls]
+                    cmds.append(cls)
+
+            class SubCmd(QuickAppBase):
+                __metaclass__ = Register
+                
+                def get_parent(self):
+                    """ Returns the QuickMultiCmdApp parent """
+                    return self.parent
+            appcls.sub = SubCmd
+        return appcls.sub
     
     def go(self):
         self.initial_setup()
