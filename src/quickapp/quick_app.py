@@ -105,14 +105,11 @@ class QuickApp(QuickAppBase):
         reports = os.path.join(outdir, 'reports')
         reports_index = os.path.join(outdir, 'reports.html')
         report_manager = ReportManager(reports, reports_index)
-        resource_manager = ResourceManager(None)
         
         job_prefix = None
         context = CompmakeContext(parent=None, qapp=self, job_prefix=job_prefix,
                                   report_manager=report_manager,
-                                  resource_manager=resource_manager,
                                   output_dir=outdir)
-        resource_manager.context = context  #  XXX not elegant
         self.context = context
         original = get_comp_prefix()
         self.define_jobs_context(context)
@@ -146,16 +143,18 @@ class QuickApp(QuickAppBase):
     def call_recursive(self, context, child_name, cmd_class, args,
                        extra_dep=[],
                        add_outdir=None,
-                       add_job_prefix=None):     
+                       add_job_prefix=None,
+                       separate_resource_manager=False):     
         instance = cmd_class()
-        instance.parent = self
+        instance.set_parent(self)
         is_quickapp = isinstance(instance, QuickApp) 
-        
+        # print('%s->%s %s' % (self, cmd_class, separate_resource_manager))
         try:
             # we are already in a context; just define jobs
-            child_context = context.child(qapp=self, name=child_name,
+            child_context = context.child(qapp=instance, name=child_name,
                                           extra_dep=extra_dep,
                                           add_outdir=add_outdir,
+                                          separate_resource_manager=separate_resource_manager,
                                           add_job_prefix=add_job_prefix)  # XXX
         
             if isinstance(args, list):

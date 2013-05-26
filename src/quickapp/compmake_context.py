@@ -5,28 +5,33 @@ from contracts import contract, describe_type
 from types import NoneType
 import os
 import warnings
-from conf_tools.master import GlobalConfig
+from conf_tools import GlobalConfig
 
 __all__ = ['CompmakeContext']
 
 
-class CompmakeContext():
+class CompmakeContext(object):
 
-    @contract(extra_dep='list', report_manager=ReportManager,
-              resource_manager=ResourceManager)    
-    def __init__(self, qapp, parent, job_prefix, report_manager, resource_manager,
-                 output_dir, extra_dep=[]):
+    @contract(extra_dep='list', report_manager=ReportManager)
+#               resource_manager=ResourceManager)    
+    def __init__(self, qapp, parent, job_prefix, report_manager,
+                 output_dir, extra_dep=[], resource_manager=None):
         assert isinstance(parent, (CompmakeContext, NoneType))
         self._qapp = qapp
         self._parent = parent
         self._job_prefix = job_prefix
         self._report_manager = report_manager
+        if resource_manager is None:
+            resource_manager = ResourceManager(self)
         self._resource_manager = resource_manager
         self._output_dir = output_dir
         self.n_comp_invocations = 0
         self._extra_dep = extra_dep
         self._jobs = {}
-        
+    
+    def __str__(self):
+        return 'CC(%s, %s)' % (type(self._qapp).__name__, self._job_prefix)
+    
     def all_jobs(self):
         return list(self._jobs.values())
     
@@ -85,7 +90,8 @@ class CompmakeContext():
         return self._output_dir
         
     @contract(extra_dep='list')    
-    def child(self, name, qapp=None, add_job_prefix=None, add_outdir=None, extra_dep=[]):
+    def child(self, name, qapp=None, add_job_prefix=None, add_outdir=None, extra_dep=[],
+              separate_resource_manager=False):
         """ 
             Returns child context 
         
@@ -96,7 +102,11 @@ class CompmakeContext():
             add_outdir:
                 None (default) => use "name"
                  '' => do not add outdir               
+
+            separate_resource_manager: If True, create a child of the ResourceManager,
+            otherwise we just use the current one and its context.  
         """
+        
         if qapp is None:
             qapp = self._qapp
             
@@ -123,24 +133,32 @@ class CompmakeContext():
             
         warnings.warn('add prefix to report manager')
         report_manager = self._report_manager
-        resource_manager = self._resource_manager
+        
+        if separate_resource_manager:
+            resource_manager = None  # CompmakeContext will create its own
+        else:
+            resource_manager = self._resource_manager
         
         _extra_dep = self._extra_dep + extra_dep
          
-        return CompmakeContext(qapp=qapp, parent=self,
+        c1 = CompmakeContext(qapp=qapp, parent=self,
                                job_prefix=job_prefix,
                                report_manager=report_manager,
                                resource_manager=resource_manager,
                                output_dir=output_dir,
                                extra_dep=_extra_dep)
+        return c1
 
     @contract(extra_dep='list')    
-    def subtask(self, task, extra_dep=[], add_job_prefix=None, add_outdir=None, **task_config):
+    def subtask(self, task, extra_dep=[], add_job_prefix=None, add_outdir=None,
+                    separate_resource_manager=False,
+                **task_config):
         return self._qapp.call_recursive(context=self, child_name=task.cmd,
                                          cmd_class=task, args=task_config,
                                          extra_dep=extra_dep,
                                          add_outdir=add_outdir,
-                                         add_job_prefix=add_job_prefix)
+                                         add_job_prefix=add_job_prefix,
+                                         separate_resource_manager=separate_resource_manager)
 
     # Resource managers
     def get_resource_manager(self):

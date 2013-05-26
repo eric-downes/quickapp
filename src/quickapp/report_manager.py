@@ -1,12 +1,12 @@
 from compmake import comp_store
 from contracts import contract, describe_type, describe_value
+from pprint import pformat
 from quickapp import logger
 from reprep import Report
 from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
 import os
 import time
-from pprint import pformat
 
 __all__ = ['ReportManager']
 
@@ -21,6 +21,22 @@ class ReportManager(object):
         self.allreports = StoreResults()
         self.allreports_filename = StoreResults()
 
+        # report_type -> set of keys necessary
+        self._report_types_format = {}
+    
+    def _check_report_format(self, report_type, **kwargs):
+        keys = sorted(list(kwargs.keys()))
+        # print('report %r %r' % (report_type, keys))
+        if not report_type in self._report_types_format:
+            self._report_types_format[report_type] = keys
+        else:
+            keys0 = self._report_types_format[report_type]
+            if not keys == keys0:
+                msg = 'Report %r %r' % (report_type, keys)
+                msg += '\ndoes not match previous format %r' % keys0
+                raise ValueError(msg)
+    
+        
     @contract(report_type='str')
     def add(self, report, report_type, **kwargs):
         """
@@ -42,6 +58,11 @@ class ReportManager(object):
                    'which are the output of comp(). Obtained: %s' 
                    % describe_type(report))
             raise ValueError(msg)
+        
+        # check the format is ok
+        self._check_report_format(report_type, **kwargs)
+        
+        
         
         key = frozendict2(report=report_type, **kwargs)
         
@@ -209,7 +230,11 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
     
     f.write('<h2>All reports</h2>\n')
 
-    sections = make_sections(reports)
+    try:
+        sections = make_sections(reports)
+    except:
+        logger.error(str(reports.keys()))
+        raise
     
     if  sections['type'] == 'sample':
         # only one...
@@ -289,7 +314,14 @@ def make_sections(allruns, common=None):
         samples = samples.remove_field(field)   
         c = dict(common)
         c[field] = value
-        division[value] = make_sections(samples, common=c)
+        try:
+            division[value] = make_sections(samples, common=c)
+        except:
+            msg = 'Error occurred inside grouping by field %r = %r' % (field, value)
+            msg += '\nCommon: %r' % common
+            msg += '\nSamples: %s' % list(samples.keys())
+            logger.error(msg)
+            raise
         
     return dict(type='division', field=field,
                 division=division, common=common)

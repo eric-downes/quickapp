@@ -65,7 +65,6 @@ class QuickMultiCmdApp(QuickAppBase):
         commands = ' | '.join(names)
         return '%prog ' + '[--config DIR1:DIR2:...] {%s} [command options]' % commands
     
-    
     @classmethod
     def get_sub(appcls):
         """ Returns the subclass for the subcommands """
@@ -85,9 +84,6 @@ class QuickMultiCmdApp(QuickAppBase):
             class SubCmd(QuickAppBase):
                 __metaclass__ = Register
                 
-                def get_parent(self):
-                    """ Returns the QuickMultiCmdApp parent """
-                    return self.parent
             appcls.sub = SubCmd
         return appcls.sub
     

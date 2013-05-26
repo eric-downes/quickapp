@@ -107,9 +107,13 @@ class QuickAppBase(HasLogger):
     def get_options(self):
         return self.options
 
-    def get_parent(self):
-        return self.parent
+    def set_parent(self, parent):
+        self.parent = parent
         
+    def get_parent(self):
+        if self.parent is not None: 
+            assert self.parent != self
+        return self.parent
     
     @contract(args='None|list(str)', returns=int)
     def main(self, args=None, parent=None):
