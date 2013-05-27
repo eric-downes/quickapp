@@ -1,13 +1,12 @@
 from .decent_param import (DecentParamFlag, DecentParam, DecentParamMultiple,
     DecentParamChoice, DecentParamsUserError, DecentParamsResults)
+from .exceptions import DecentParamsUnknownArgs, DecentParamsDefinitionError
+from argparse import RawTextHelpFormatter
 from contracts import contract
-from decent_params import UserError, Choice
+from decent_params import Choice
 from pprint import pformat
 import argparse
 import warnings
-from argparse import RawTextHelpFormatter
-from decent_params.exceptions import DecentParamsUnknownArgs, \
-    DecentParamsDefinitionError
 
 __all__ = ['DecentParams']
 

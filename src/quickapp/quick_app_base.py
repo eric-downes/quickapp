@@ -1,6 +1,6 @@
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod
 from conf_tools.utils import indent
-from contracts import contract, describe_value
+from contracts import contract, describe_value, ContractsMeta
 from decent_params import DecentParams, UserError
 from pprint import pformat
 from .utils import HasLogger
@@ -9,6 +9,8 @@ import logging
 import os
 import sys
 import traceback
+from quickapp.exceptions import QuickAppException
+from decent_params.exceptions import DecentParamsUserError
 
 __all__ = ['QuickAppBase']
 
@@ -23,7 +25,7 @@ class QuickAppBase(HasLogger):
             
     
     """
-    __metaclass__ = ABCMeta
+    __metaclass__ = ContractsMeta
 
     def __init__(self, parent=None):
         HasLogger.__init__(self)
@@ -151,17 +153,19 @@ class QuickAppBase(HasLogger):
         
         try:
             self.options = params.get_dpr_from_dict(config)
-             
-        except UserError:
-            raise
+        except DecentParamsUserError as e:
+            raise QuickAppException(str(e))
         except Exception as e:
             msg = 'Could not interpret:\n'
             msg += indent(pformat(config), '| ') 
             msg += 'according to params spec:\n'
             msg += indent(str(params), '| ') + '\n'
             msg += 'Error is:\n'
+#             if isinstance(e, DecentParamsUserError):
+#                 msg += indent(str(e), '> ')
+#             else:
             msg += indent(traceback.format_exc(e), '> ')
-            raise Exception(msg)  # XXX class
+            raise QuickAppException(msg)  # XXX class
          
  
     @contract(args='list(str)')

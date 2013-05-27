@@ -1,8 +1,7 @@
 from .compmake_context import CompmakeContext
 from .quick_app_base import QuickAppBase
 from .report_manager import ReportManager
-from .resource_manager import ResourceManager
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem, comp_prefix, get_comp_prefix)
 from conf_tools.utils import indent
@@ -14,6 +13,8 @@ import os
 import sys
 import traceback
 import warnings
+from contracts.metaclass import ContractsMeta
+from quickapp.exceptions import QuickAppException
 
 
 __all__ = ['QuickApp', 'quickapp_main']
@@ -23,7 +24,8 @@ class QuickApp(QuickAppBase):
 
     """ Template for an application that uses compmake to define jobs. """
 
-    __metaclass__ = ABCMeta
+    __metaclass__ = ContractsMeta
+
 
     # Interface to be implemented
     @abstractmethod
@@ -177,14 +179,16 @@ class QuickApp(QuickAppBase):
             return res
         
         except Exception as e:
-            msg = 'Error while trying to call recursive:\n'
-            msg += ' class = %s\n' % cmd_class
-            msg += ' args = %s\n' % args
+            msg = 'While trying to run  %s\n' % cmd_class.__name__
+            msg += 'with arguments = %s\n' % args
             if '_options' in instance.__dict__:
                 msg += ' parsed options: %s\n' % instance.get_options()
                 msg += ' params: %s\n' % instance.get_options().get_params()
-            msg += indent(traceback.format_exc(e), '> ')
-            raise Exception(msg)
+            if isinstance(e, QuickAppException):
+                msg += indent(str(e), '> ')
+            else:
+                msg += indent(traceback.format_exc(e), '> ')
+            raise QuickAppException(msg)
       
 
 def quickapp_main(quickapp_class, args=None, sys_exit=True):
@@ -203,7 +207,7 @@ def quickapp_main(quickapp_class, args=None, sys_exit=True):
         args = sys.argv[1:]
         
     return wrap_script_entry_point(instance.main, logger,
-                            exceptions_no_traceback=(UserError,),
+                            exceptions_no_traceback=(UserError, QuickAppException),
                             args=args, sys_exit=sys_exit)
 
 

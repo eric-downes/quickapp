@@ -17,7 +17,8 @@ class ResourceManager(object):
         from quickapp.compmake_context import CompmakeContext
         assert isinstance(context, CompmakeContext), context
         self.allresources = StoreResults()
-        self.providers = defaultdict(list)
+        self.providers = defaultdict(list)  # rtype => list of providers
+        self.make_prefix = {}  # rtype => function to make prefix
         self._context = context
 
     @contract(rtype='str')
@@ -25,8 +26,18 @@ class ResourceManager(object):
         """
             provider: any callable. It will be called with "context" as first 
                 argument, and with any remaining params.
+                
         """
-        self.providers[rtype].append(provider) 
+        self.providers[rtype].append(provider)
+        
+        
+    def set_resource_prefix_function(self, rtype, make_prefix):
+        """
+            make_prefix: a function that takes (rtype, **params) and 
+            returns a string.
+        """ 
+        self.make_prefix[rtype] = make_prefix
+    
 
     @contract(rtype='str')
     def get_resource(self, rtype, **params):
@@ -74,6 +85,11 @@ class ResourceManager(object):
     
     def _make_prefix(self, rtype, **params):
         """ Creates the job prefix for the given resource. """
+        # use the user-defined if available
+        if rtype in self.make_prefix:
+            f = self.make_prefix[rtype] 
+            return f(rtype, **params)
+        
         keys = sorted(list(params.keys()))
         vals = [params[k] for k in keys]
         rtype = rtype.replace('-', '_')

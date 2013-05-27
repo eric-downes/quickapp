@@ -161,6 +161,7 @@ class CompmakeContext(object):
                                          separate_resource_manager=separate_resource_manager)
 
     # Resource managers
+    @contract(returns=ResourceManager)
     def get_resource_manager(self):
         return self._resource_manager
     

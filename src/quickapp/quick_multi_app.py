@@ -5,6 +5,7 @@ from conf_tools.utils import indent, termcolor_colored
 from decent_params import UserError
 from reprep.utils import deprecated
 import logging
+from contracts.metaclass import ContractsMeta
 
 
 __all__ = ['QuickMultiCmdApp', 'add_subcommand']
@@ -70,8 +71,9 @@ class QuickMultiCmdApp(QuickAppBase):
         """ Returns the subclass for the subcommands """
         # mainly because eclipse does not see ".sub" as valid.
         if not hasattr(appcls, 'sub'):
-            class Register(ABCMeta):
+            class Register(ContractsMeta):
                 def __init__(cls, clsname, bases, clsdict):  # @UnusedVariable @NoSelf
+                    ContractsMeta.__init__(cls, clsname, bases, clsdict)
                     if not 'cmd' in clsdict:
                         # print('skpping %r' % cls)
                         return

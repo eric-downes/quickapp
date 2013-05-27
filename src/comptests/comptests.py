@@ -1,8 +1,10 @@
+from .registrar import recipe_instance_objects
 from conf_tools import import_name
 from quickapp import QuickApp
 import os
-from os.path import dirname, exists, join
+from os.path import dirname, join
 from conf_tools.utils import locate_files
+from conf_tools.master import GlobalConfig
 
 __all__ = ['CompTests', 'main_comptests']
 
@@ -23,6 +25,9 @@ class CompTests(QuickApp):
          
     
     def define_jobs_context(self, context):
+        GlobalConfig.global_load_dir('default')
+        recipe_instance_objects(context)
+        
         for m in self.interpret_extras_as_modules():
             c = context.child(m)
             self.define_jobs_module(c, m)
@@ -37,6 +42,7 @@ class CompTests(QuickApp):
             if os.path.exists(m):
                 # if it's a path, look for 'setup.py' subdirs
                 self.info('Interpreting %r as path.' % m)
+                self.info('modules main: %s' % " ".join(find_modules_main(m)))
                 modules = list(find_modules(m))
                 if not modules:
                     self.warn('No modules found in %r' % m)
@@ -48,17 +54,6 @@ class CompTests(QuickApp):
                 yield m
                 
             
-    def look_for_packages(self, d):
-        setups = locate_files(d, 'setup.py')
-        for s in setups:
-            # look for '__init__.py'
-            base = join(dirname(s), 'src')
-            for i in locate_files(base, '__init__.py'):
-                p = os.path.relpath(i, base)
-                components = p.split('/')[:-1]  # remove __init__
-                module = ".".join(components)
-                yield module
-        
     def define_jobs_module(self, context, module_name):
         is_first = not '.' in module_name
         warn_errors = is_first
@@ -79,9 +74,24 @@ class CompTests(QuickApp):
         ff = module.__dict__[f]
         for f in ff():
             context.subtask(f)
-        
+#         
+# def look_for_packages(self, d):
+#     setups = locate_files(d, 'setup.py')
+#     for s in setups:
+#         # look for '__init__.py'
+#         base = join(dirname(s), 'src')
+#         for i in locate_files(base, '__init__.py'):
+#             p = os.path.relpath(i, base)
+#             components = p.split('/')[:-1]  # remove __init__
+#             module = ".".join(components)
+#             yield module
 
-def find_modules(d):
+def find_modules_main(root):
+    """ Finds the main modules (not '.' in the name) """
+    is_main = lambda d: not '.' in d
+    return filter(is_main, find_modules(root))
+
+def find_modules(root):
     """ 
         Looks for modules defined in packages that have the structure: ::
         
@@ -92,7 +102,7 @@ def find_modules(d):
             
         This will yield ['module', 'module.module2']
     """ 
-    setups = locate_files(d, 'setup.py')
+    setups = locate_files(root, 'setup.py')
     for s in setups:
         # look for '__init__.py'
         base = join(dirname(s), 'src')
