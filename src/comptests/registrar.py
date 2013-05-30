@@ -8,6 +8,7 @@ import itertools
 __all__ = ['get_comptests_app', 'comptests_for_all', 'comptests_for_all_pairs']
 
 INSTANCE_TEST_OBJECT = 'instance'
+GETSPEC_TEST_OBJECT = 'getspec'
 
 class ComptestsRegistrar(object):
     """ Static storage """
@@ -86,7 +87,8 @@ def get_comptests_app(cm):
                 
             for id_object, ob in test_objects.items():    
                 for f in functions:
-                    context.comp(run_test, f, id_object, ob)
+                    job_id = '%s-%s' % (f.__name__, id_object)
+                    context.comp(run_test, f, id_object, ob, job_id=job_id)
             
         def define_tests_pairs(self, context, objspec1):
             objs1 = self.get_test_objects(context, objspec1)
@@ -102,7 +104,9 @@ def get_comptests_app(cm):
                     self.error('No objects %r for pairs' % objspec2.name)
                 combinations = itertools.product(objs1.items(), objs2.items()) 
                 for (id_ob1, ob1), (id_ob2, ob2) in combinations:
-                    context.comp(run_test_pair, func, id_ob1, ob1, id_ob2, ob2) 
+                    job_id = '%s-%s-%s' % (func.__name__, id_ob1, id_ob2)
+                    context.comp(run_test_pair, func, id_ob1, ob1, id_ob2, ob2,
+                                 job_id=job_id)
             
         @contract(returns='dict(str:*)')
         def get_test_objects(self, context, objspec):
@@ -113,11 +117,16 @@ def get_comptests_app(cm):
                 
         @contract(returns=Promise)
         def get_test_object_promise(self, context, objspec, id_object):
+            if objspec.instance_method is None:
+                resource = GETSPEC_TEST_OBJECT
+            else:
+                resource = INSTANCE_TEST_OBJECT
             rm = context.get_resource_manager()
-            return rm.get_resource(INSTANCE_TEST_OBJECT,
+            return rm.get_resource(resource,
                                    master=objspec.master.name,
                                    objspec=objspec.name, id_object=id_object)
                     
+    ComptestApp.__name__ = 'ComptestApp%s' % cm.name
     return ComptestApp 
 
 def run_test(function, id_ob, ob):
@@ -142,10 +151,23 @@ def recipe_instance_objects(context):
     rm.set_resource_provider(INSTANCE_TEST_OBJECT, instance_test_object)
     rm.set_resource_prefix_function(INSTANCE_TEST_OBJECT, _make_prefix)
 
-def _make_prefix(rtype, master, objspec, id_object):  # @UnusedVariable
-    return 'instance-%s-%s' % (objspec, id_object)
-    
-def instance_object(master_name, objspec_name, id_object):
+def recipe_get_spec(context):
+    """
+        agent-learn (id_agent, id_robot)
+        
+        learns all episodes for the robot in the db
+    """
+
+    @contract(objspec='str', id_object='str')
+    def get_the_spec(context, master, objspec, id_object):
+        return context.comp_config(get_spec, master, objspec, id_object,
+                                   job_id='s')
+        
+    rm = context.get_resource_manager()        
+    rm.set_resource_provider(GETSPEC_TEST_OBJECT, get_the_spec)
+    rm.set_resource_prefix_function(GETSPEC_TEST_OBJECT, _make_prefix)
+
+def get_objspec(master_name, objspec_name):
     master = GlobalConfig._masters[master_name]
     specs = master.specs
     if not objspec_name in specs:
@@ -153,7 +175,17 @@ def instance_object(master_name, objspec_name, id_object):
         msg += str(specs.keys())
         raise Exception(msg)
     objspec = master.specs[objspec_name]
-    # objspec = GlobalConfig._singletons[objspec_name]
+    return objspec
+
+def get_spec(master_name, objspec_name, id_object):
+    objspec = get_objspec(master_name, objspec_name)
+    return objspec[id_object]
+
+def _make_prefix(rtype, master, objspec, id_object):  # @UnusedVariable
+    return 'instance-%s-%s' % (objspec, id_object)
+    
+def instance_object(master_name, objspec_name, id_object):
+    objspec = get_objspec(master_name, objspec_name)
     return objspec.instance(id_object)
 
 

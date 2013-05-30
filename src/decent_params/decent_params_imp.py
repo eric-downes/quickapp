@@ -1,6 +1,7 @@
 from .decent_param import (DecentParamFlag, DecentParam, DecentParamMultiple,
-    DecentParamChoice, DecentParamsUserError, DecentParamsResults)
-from .exceptions import DecentParamsUnknownArgs, DecentParamsDefinitionError
+    DecentParamChoice, DecentParamsResults)
+from .exceptions import (DecentParamsUnknownArgs, DecentParamsDefinitionError,
+    DecentParamsUserError)
 from argparse import RawTextHelpFormatter
 from contracts import contract
 from decent_params import Choice

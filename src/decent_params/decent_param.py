@@ -1,7 +1,6 @@
 from contracts import contract, describe_type, describe_value
 from decent_params import Choice
-from decent_params.exceptions import DecentParamsUserError, \
-    DecentParamsSemanticError
+from .exceptions import  DecentParamsSemanticError
 
 
 

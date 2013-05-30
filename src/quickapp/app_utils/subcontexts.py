@@ -1,12 +1,14 @@
 from contracts import contract
 import os
 
-__all__ = ['iterate_context_names', 'iterate_context_names_pair']
+__all__ = ['iterate_context_names', 'iterate_context_names_pair', 'iterate_context_names_triplet',
+           'iterate_context_names_quartet']
 
 
 def iterate_context_names(context, it1):
     """ Creates child contexts with minimal names. """
-    _, names, _ = minimal_names_at_boundaries(map(good_context_name, it1))
+    names = map(str, it1)
+    _, names, _ = minimal_names_at_boundaries(map(good_context_name, names))
     for x, name in zip(it1, names):
         e_c = context.child(name)
         yield e_c, x
@@ -20,6 +22,25 @@ def iterate_context_names_pair(context, it1, it2):
     for cc, x1 in iterate_context_names(context, it1):
         for c, x2 in iterate_context_names(cc, it2):
             yield c, x1, x2
+
+def iterate_context_names_triplet(context, it1, it2, it3):
+    """
+        Yields tuples of (context, s1, s2, s3).
+    """
+    for c1, x1 in iterate_context_names(context, it1):
+        for c2, x2 in iterate_context_names(c1, it2):
+            for c3, x3 in iterate_context_names(c2, it3):
+                yield c3, x1, x2, x3
+
+def iterate_context_names_quartet(context, it1, it2, it3, it4):
+    """
+        Yields tuples of (context, s1, s2, s3, s4).
+    """
+    for c1, x1 in iterate_context_names(context, it1):
+        for c2, x2 in iterate_context_names(c1, it2):
+            for c3, x3 in iterate_context_names(c2, it3):
+                for c4, x4 in iterate_context_names(c3, it4):
+                    yield c4, x1, x2, x3, x4
 
 
 @contract(id_object='str', returns='str')

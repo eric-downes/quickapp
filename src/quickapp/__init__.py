@@ -25,6 +25,6 @@ from .quick_app import *
 from .compmake_context import *
 from .app_utils import *
 
-symbols = [QuickMultiCmdApp, QuickApp, add_subcommand, ResourceManager]
+symbols = [QuickMultiCmdApp, QuickApp, QuickAppBase, add_subcommand, ResourceManager]
 for s in symbols: 
     s.__module__ = 'quickapp'

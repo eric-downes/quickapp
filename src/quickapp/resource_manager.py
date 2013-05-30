@@ -66,10 +66,11 @@ class ResourceManager(object):
                 msg += 'While calling provider %r:\n' % provider
                 msg += indent(traceback.format_exc(e), '> ')
                 raise Exception(msg)
+            
         if not ok:
-            msg = 'No provider could create this resource.'
-            msg += errors
-            raise 
+            msg = 'No provider could create this resource:\n'
+            msg += "\n".join('- %s' % str(e) for e in  errors)
+            raise Exception(msg)
         
         if len(ok) >= 2:
             msg = 'The same resource could be created by two providers.'
