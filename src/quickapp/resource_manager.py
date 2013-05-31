@@ -92,7 +92,8 @@ class ResourceManager(object):
             return f(rtype, **params)
         
         keys = sorted(list(params.keys()))
-        vals = [params[k] for k in keys]
+        from quickapp.app_utils.subcontexts import good_context_name
+        vals = [good_context_name(params[k]) for k in keys]
         rtype = rtype.replace('-', '_')
         alls = [rtype] + vals
         prefix = "-".join(alls)

@@ -7,8 +7,12 @@ __all__ = ['iterate_context_names', 'iterate_context_names_pair', 'iterate_conte
 
 def iterate_context_names(context, it1):
     """ Creates child contexts with minimal names. """
+    # make strings
     names = map(str, it1)
-    _, names, _ = minimal_names_at_boundaries(map(good_context_name, names))
+    # get nonambiguous and minimal at _,- boundaries
+    _, names, _ = minimal_names_at_boundaries(names)
+    # remove '-' and '_'
+    names = map(good_context_name, names)
     for x, name in zip(it1, names):
         e_c = context.child(name)
         yield e_c, x
@@ -42,14 +46,27 @@ def iterate_context_names_quartet(context, it1, it2, it3, it4):
                 for c4, x4 in iterate_context_names(c3, it4):
                     yield c4, x1, x2, x3, x4
 
-
+def iterate_context_names_quintuplet(context, it1, it2, it3, it4, it5):
+    """
+        Yields tuples of (context, s1, s2, s3, s4).
+    """
+    for c1, x1 in iterate_context_names(context, it1):
+        for c2, x2 in iterate_context_names(c1, it2):
+            for c3, x3 in iterate_context_names(c2, it3):
+                for c4, x4 in iterate_context_names(c3, it4):
+                    for c5, x5 in iterate_context_names(c4, it5):
+                        yield c5, x1, x2, x3, x4, x5
+                        
+                        
 @contract(id_object='str', returns='str')
 def good_context_name(id_object):
     """ 
         Removes strange characters from a string to make it a good 
         context name. 
     """
-    return id_object.replace('-', '')
+    id_object = id_object.replace('-', '')
+    id_object = id_object.replace('_', '')
+    return id_object
 
 
 @contract(objects='seq[N](str)', returns='tuple(str, list[N](str), str)')
