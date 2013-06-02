@@ -108,7 +108,7 @@ def minimal_names(objects):
     objects2 = [prefix + m + postfix for m in minimal]
     
     # print objects, objects2
-    assert objects == objects2
+    assert objects == objects2, (prefix, minimal, postfix)
     return prefix, minimal, postfix
     
     
@@ -144,10 +144,11 @@ def minimal_names_at_boundaries(objects, separators=['_', '-']):
     # convert and split to uniform separators
     @contract(x='str', returns='str')
     def convert(x):
+        return x
         for s in separators[1:]:
             x = x.replace(s, s0)
         return x
-    
+     
     objectsu = map(convert, objects)
     astokens = [x.split(s0) for x in objectsu]
     
@@ -190,7 +191,7 @@ def minimal_names_at_boundaries(objects, separators=['_', '-']):
     # recreate them to check everything is ok
     objects2 = [prefix + m + postfix for m in minimal]
     
-    assert objects == objects2
+    assert objects == objects2, (objects, objects2, (prefix, minimal, postfix))
     return prefix, minimal, postfix
     
     

@@ -205,7 +205,7 @@ def quickapp_main(quickapp_class, args=None, sys_exit=True):
     instance = quickapp_class()
     if args is None:
         args = sys.argv[1:]
-        
+    
     return wrap_script_entry_point(instance.main, logger,
                             exceptions_no_traceback=(UserError, QuickAppException),
                             args=args, sys_exit=sys_exit)
