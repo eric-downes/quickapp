@@ -15,7 +15,7 @@ class CompmakeContext(object):
     @contract(extra_dep='list', report_manager=ReportManager)
 #               resource_manager=ResourceManager)    
     def __init__(self, qapp, parent, job_prefix, report_manager,
-                 output_dir, extra_dep=[], resource_manager=None):
+                 output_dir, extra_dep=[], resource_manager=None, extra_report_keys=None):
         assert isinstance(parent, (CompmakeContext, NoneType))
         self._qapp = qapp
         self._parent = parent
@@ -28,7 +28,10 @@ class CompmakeContext(object):
         self.n_comp_invocations = 0
         self._extra_dep = extra_dep
         self._jobs = {}
-    
+        if extra_report_keys is None:
+            extra_report_keys = {}
+        self.extra_report_keys = extra_report_keys
+        
     def __str__(self):
         return 'CC(%s, %s)' % (type(self._qapp).__name__, self._job_prefix)
     
@@ -91,6 +94,7 @@ class CompmakeContext(object):
         
     @contract(extra_dep='list')    
     def child(self, name, qapp=None, add_job_prefix=None, add_outdir=None, extra_dep=[],
+              extra_report_keys=None,
               separate_resource_manager=False):
         """ 
             Returns child context 
@@ -141,10 +145,16 @@ class CompmakeContext(object):
         
         _extra_dep = self._extra_dep + extra_dep
          
+        extra_report_keys_ = {}
+        extra_report_keys_.update(self.extra_report_keys)
+        if extra_report_keys is not None:
+            extra_report_keys_.update(extra_report_keys)
+        
         c1 = CompmakeContext(qapp=qapp, parent=self,
                                job_prefix=job_prefix,
                                report_manager=report_manager,
                                resource_manager=resource_manager,
+                               extra_report_keys=extra_report_keys_,
                                output_dir=output_dir,
                                extra_dep=_extra_dep)
         return c1
@@ -152,12 +162,14 @@ class CompmakeContext(object):
     @contract(extra_dep='list')    
     def subtask(self, task, extra_dep=[], add_job_prefix=None, add_outdir=None,
                     separate_resource_manager=False,
-                **task_config):
+                    extra_report_keys=None,
+                    **task_config):
         return self._qapp.call_recursive(context=self, child_name=task.cmd,
                                          cmd_class=task, args=task_config,
                                          extra_dep=extra_dep,
                                          add_outdir=add_outdir,
                                          add_job_prefix=add_job_prefix,
+                                         extra_report_keys=extra_report_keys,
                                          separate_resource_manager=separate_resource_manager)
 
     # Resource managers
@@ -174,6 +186,7 @@ class CompmakeContext(object):
     # Reports    
     def add_report(self, report, report_type=None, **params):
         rm = self.get_report_manager()
+        params.update(self.extra_report_keys)
         rm.add(report, report_type, **params)
 
     def get_report_manager(self):

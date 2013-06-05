@@ -88,7 +88,7 @@ def get_comptests_app(cm):
             for id_object, ob in test_objects.items():    
                 for f in functions:
                     job_id = '%s-%s' % (f.__name__, id_object)
-                    context.comp(run_test, f, id_object, ob, job_id=job_id)
+                    context.comp_config(run_test, f, id_object, ob, job_id=job_id)
             
         def define_tests_pairs(self, context, objspec1):
             objs1 = self.get_test_objects(context, objspec1)
@@ -105,7 +105,7 @@ def get_comptests_app(cm):
                 combinations = itertools.product(objs1.items(), objs2.items()) 
                 for (id_ob1, ob1), (id_ob2, ob2) in combinations:
                     job_id = '%s-%s-%s' % (func.__name__, id_ob1, id_ob2)
-                    context.comp(run_test_pair, func, id_ob1, ob1, id_ob2, ob2,
+                    context.comp_config(run_test_pair, func, id_ob1, ob1, id_ob2, ob2,
                                  job_id=job_id)
             
         @contract(returns='dict(str:*)')
@@ -177,12 +177,15 @@ def get_objspec(master_name, objspec_name):
     objspec = master.specs[objspec_name]
     return objspec
 
+
 def get_spec(master_name, objspec_name, id_object):
     objspec = get_objspec(master_name, objspec_name)
     return objspec[id_object]
 
+
 def _make_prefix(rtype, master, objspec, id_object):  # @UnusedVariable
     return 'instance-%s-%s' % (objspec, id_object)
+    
     
 def instance_object(master_name, objspec_name, id_object):
     objspec = get_objspec(master_name, objspec_name)

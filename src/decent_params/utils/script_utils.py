@@ -20,11 +20,11 @@ def wrap_script_entry_point(function, logger,
 
     """
     
-    logger.info('wrap_script_entry_point')
+    # logger.info('wrap_script_entry_point')
 
     ret = wrap_script_entry_point_noexit(function, logger, exceptions_no_traceback, args)
     
-    logger.info('wrap_script_entry_point ret %s' % ret)
+    # logger.info('wrap_script_entry_point ret %s' % ret)
     
     if sys_exit:
         sys.stdout.flush()
@@ -51,16 +51,14 @@ def wrap_script_entry_point_noexit(function, logger,
             ret = 0
         return ret
     except exceptions_no_traceback as e:
-        print('no traceback')
+        # print('no traceback')
         logger.error(str(e))
         return 1
     except Exception as e:
-        print('normal exception')
+        # print('normal exception')
         s = traceback.format_exc()
         logger.error(s)
-        sys.stderr.write(s)
-        sys.stderr.write('\n')
-        sys.stderr.flush()
-        
-        
+#         sys.stderr.write(s)
+#         sys.stderr.write('\n')
+#         sys.stderr.flush()
         return 2

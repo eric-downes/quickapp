@@ -12,6 +12,7 @@ __all__ = ['ReportManager']
 
 
 class ReportManager(object):
+    # TODO: make it use a context
     
     def __init__(self, outdir, index_filename=None):
         self.outdir = outdir
@@ -42,11 +43,9 @@ class ReportManager(object):
         """
             Adds a report to the collection.
             
-            
-            report: Promise of a Report object
-            report_type: A string that describes the "type" of the report
-        
-            kwargs:  str->str,int,float  parameters used for grouping
+            :param report: Promise of a Report object
+            :param report_type: A string that describes the "type" of the report
+            :param kwargs:  str->str,int,float  parameters used for grouping
         """         
         if not isinstance(report_type, str):
             msg = 'Need a string for report_type, got %r.' % describe_value(report_type)
@@ -62,12 +61,12 @@ class ReportManager(object):
         # check the format is ok
         self._check_report_format(report_type, **kwargs)
         
-        
-        
         key = frozendict2(report=report_type, **kwargs)
         
         if key in self.allreports:
             msg = 'Already added report for %s' % key
+            msg += '\n its values is %s' % self.allreports[key]
+            msg += '\n new value would be %s' % report
             raise ValueError(msg)
 
         self.allreports[key] = report
@@ -100,25 +99,109 @@ class ReportManager(object):
             filename = self.allreports_filename[key] 
 
             write_job_id = job_report.job_id + '-write'
-            # comp_stage_job_id(job_report, 'write')
+            
+            # Create the links to reports of the same type
+            report_type = key['report']
+            other_reports_same_type = self.allreports_filename.select(report=report_type)
+            other_reports_same_type = other_reports_same_type.remove_field('report')
+            key = dict(**key)
+            del key['report']
             
             comp(write_report_and_update,
                  job_report, filename, allreports_filename, self.index_filename,
                  write_pickle=True,
+                 this_report=key,
+                 other_reports_same_type=other_reports_same_type,
                  job_id=write_job_id)
-             
 
+
+def create_links_html(this_report, other_reports_same_type):
+    '''
+    :param this_report: dictionary with the keys describing the report
+    :param other_reports_same_type: StoreResults -> filename
+    :returns: html string describing the link
+    '''
+    
+    s = ""
+
+    # create table by cols
+    table = create_links_html_table(this_report, other_reports_same_type)
+    
+    s += "<table class='variations'>"
+    s += "<thead><tr>"
+    for field, _ in table:
+        s += "<th>%s</th>" % field
+    s += "</tr></thead>"
+
+    s += "<tr>"
+    for field, variations in table:
+        s += "<td>"
+        for text, link in variations:
+            if link is not None:
+                s += "<a href='%s'> %s</a> " % (link, text)
+            else:
+                s += "%s " % (text)
+            s += '<br/>'
+            
+        s += "</td>"
+
+    s += "</tr>"
+    s += "</table>"
+    return s
+
+# @contract(returns="list( tuple(str, list(tuple(str, None|str))))")
+@contract(returns="list( tuple(str, *))")
+def create_links_html_table(this_report, other_reports_same_type):
+    # Iterate over all keys (each key gets a column)
+    
+    def rel_link(f):
+        # TODO: make it relative
+        f0 = other_reports_same_type[this_report]
+        rl = os.path.relpath(f, os.path.dirname(f0))
+        return rl
+
+    cols = []
+    fieldnames = other_reports_same_type.field_names()
+    for field in fieldnames:
+        field_values = other_reports_same_type.field_values(field)
+        field_values = sorted(list(set(field_values)))
+        col = []
+        for fv in field_values:
+            if fv == this_report[field]:
+                res = ('%s (this)' % str(fv), None)
+            else:
+                # this is the variation obtained by changing only one field value
+                variation = dict(**this_report)
+                variation[field] = fv
+                # if it doesn't exist:
+                if not variation in other_reports_same_type:
+                    res = ('%s (n/a)' % str(fv), None)
+                else:
+                    res = (fv, rel_link(other_reports_same_type[variation]))
+            col.append(res)
+        cols.append((field, col))
+    return cols
+    
+@contract(report=Report)
 def write_report_and_update(report, report_html, all_reports, index_filename,
+                            this_report,
+                            other_reports_same_type,
                             write_pickle=False):
+    
     if not isinstance(report, Report):
         msg = 'Expected Report, got %s.' % describe_type(report)
         raise ValueError(msg) 
-    html = write_report(report, report_html, write_pickle=write_pickle)
+    
+    links = create_links_html(this_report, other_reports_same_type)
+    
+    extras = dict(extra_html_body_start=links,
+                  extra_html_body_end='<pre>%s</pre>' % report.format_tree())
+    html = write_report(report, report_html, write_pickle=write_pickle, **extras)
     index_reports(reports=all_reports, index=index_filename, update=html)
 
 
 @contract(report=Report, report_html='str')
-def write_report(report, report_html, write_pickle=False): 
+def write_report(report, report_html, write_pickle=False, **kwargs): 
     from conf_tools.utils import friendly_path
     logger.debug('Writing to %r.' % friendly_path(report_html))
     if False:
@@ -126,7 +209,8 @@ def write_report(report, report_html, write_pickle=False):
         rd = os.path.join(os.path.dirname(report_html), 'images')
     else:
         rd = None
-    report.to_html(report_html, write_pickle=write_pickle, resources_dir=rd)
+    report.to_html(report_html,
+                   write_pickle=write_pickle, resources_dir=rd, **kwargs)
     # TODO: save hdf format
     return report_html
 

@@ -146,7 +146,8 @@ class QuickApp(QuickAppBase):
                        extra_dep=[],
                        add_outdir=None,
                        add_job_prefix=None,
-                       separate_resource_manager=False):     
+                       separate_resource_manager=False,
+                       extra_report_keys=None):     
         instance = cmd_class()
         instance.set_parent(self)
         is_quickapp = isinstance(instance, QuickApp) 
@@ -156,6 +157,7 @@ class QuickApp(QuickAppBase):
             child_context = context.child(qapp=instance, name=child_name,
                                           extra_dep=extra_dep,
                                           add_outdir=add_outdir,
+                                          extra_report_keys=extra_report_keys,
                                           separate_resource_manager=separate_resource_manager,
                                           add_job_prefix=add_job_prefix)  # XXX
         
