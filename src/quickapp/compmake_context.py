@@ -183,11 +183,16 @@ class CompmakeContext(object):
         assert isinstance(res, Promise), describe_type(res)
         self._extra_dep.append(res)
 
+    def get_resource(self, rtype, **params):
+        rm = self.get_resource_manager()
+        return rm.get_resource(rtype, **params)
+    
     # Reports    
     def add_report(self, report, report_type=None, **params):
         rm = self.get_report_manager()
         params.update(self.extra_report_keys)
         rm.add(report, report_type, **params)
+
 
     def get_report_manager(self):
         return self._report_manager

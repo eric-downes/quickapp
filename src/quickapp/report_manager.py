@@ -5,6 +5,7 @@ from quickapp import logger
 from reprep import Report
 from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
+import numpy as np
 import os
 import time
 
@@ -36,7 +37,6 @@ class ReportManager(object):
                 msg = 'Report %r %r' % (report_type, keys)
                 msg += '\ndoes not match previous format %r' % keys0
                 raise ValueError(msg)
-    
         
     @contract(report_type='str')
     def add(self, report, report_type, **kwargs):
@@ -89,11 +89,17 @@ class ReportManager(object):
         # Do not pass as argument, it will take lots of memory!
         # XXX FIXME: there should be a way to make this update or not
         # otherwise new reports do not appear
-        if len(self.allreports_filename) > 100:
+        optimize_space = False
+        if optimize_space and len(self.allreports_filename) > 100:
             allreports_filename = comp_store(self.allreports_filename, 'allfilenames')
         else:
             allreports_filename = self.allreports_filename
-                    
+        
+        type2reports = {}    
+        for report_type, xs in self.allreports_filename.groups_by_field_value('report'):
+            type2reports[report_type] = xs.remove_field('report')
+        
+            
         for key in self.allreports:
             job_report = self.allreports[key]
             filename = self.allreports_filename[key] 
@@ -102,30 +108,75 @@ class ReportManager(object):
             
             # Create the links to reports of the same type
             report_type = key['report']
-            other_reports_same_type = self.allreports_filename.select(report=report_type)
-            other_reports_same_type = other_reports_same_type.remove_field('report')
+            other_reports_same_type = type2reports[report_type]
+            
             key = dict(**key)
             del key['report']
+
+            # find the closest report for different type
+            others = []
+            for other_type, other_type_reports in type2reports.items():
+                if other_type == report_type:
+                    continue
+                best = get_most_similar(other_type_reports, key)
+                if best is not None:
+#                     print('Best match:\n-%s %s\n- %s %s' % (report_type, key,
+#                                                             other_type, best))
+                    others.append((other_type, best, other_type_reports[best]))
+            
             
             comp(write_report_and_update,
                  job_report, filename, allreports_filename, self.index_filename,
                  write_pickle=True,
                  this_report=key,
                  other_reports_same_type=other_reports_same_type,
+                 most_similar_other_type=others,
                  job_id=write_job_id)
 
 
-def create_links_html(this_report, other_reports_same_type):
+def get_most_similar(reports_different_type, key):
+    """ Returns the report of another type that is most similar to this report. """
+    
+    def score(key1):
+        v1 = set(key1.values())
+        v2 = set(key.values())
+        return len(v1 & v2)
+    
+    keys = list(reports_different_type.keys())
+    scores = np.array(map(score, keys))
+    
+    tie = np.sum(scores == np.max(scores)) > 1
+    if tie:
+        # print('there is a tie: %s,\n %s' % (key, keys))
+        return None
+    
+    best = keys[np.argmax(scores)]
+    
+    return best
+    
+    
+    
+def create_links_html(this_report, other_reports_same_type, index_filename,
+                      most_similar_other_type):
     '''
     :param this_report: dictionary with the keys describing the report
     :param other_reports_same_type: StoreResults -> filename
     :returns: html string describing the link
     '''
     
+    def rel_link(f):
+        # TODO: make it relative
+        f0 = other_reports_same_type[this_report]
+        rl = os.path.relpath(f, os.path.dirname(f0))
+        return rl
+
+
     s = ""
 
     # create table by cols
     table = create_links_html_table(this_report, other_reports_same_type)
+    
+    s += "<p><a href='%s'>All reports</a></p>" % rel_link(index_filename)
     
     s += "<table class='variations'>"
     s += "<thead><tr>"
@@ -147,6 +198,19 @@ def create_links_html(this_report, other_reports_same_type):
 
     s += "</tr>"
     s += "</table>"
+    
+#     s += '<dl>'
+#     for other_type, most_similar, filename in most_similar_other_type:
+#         s += '<dt><a href="%s">%s</a></dt><dd>%s</dd>' % (rel_link(filename), 
+#                                                           other_type, most_similar) 
+#     s += '</dl>'
+
+    s += '<p>Other reports: '
+    for other_type, _, filename in most_similar_other_type:
+        s += '<a href="%s">%s</a> ' % (rel_link(filename), other_type) 
+    s += '</p>'
+    
+    s = '<div style="margin-left: 1em;">' + s + '</div>'
     return s
 
 # @contract(returns="list( tuple(str, list(tuple(str, None|str))))")
@@ -186,13 +250,15 @@ def create_links_html_table(this_report, other_reports_same_type):
 def write_report_and_update(report, report_html, all_reports, index_filename,
                             this_report,
                             other_reports_same_type,
+                            most_similar_other_type,
                             write_pickle=False):
     
     if not isinstance(report, Report):
         msg = 'Expected Report, got %s.' % describe_type(report)
         raise ValueError(msg) 
     
-    links = create_links_html(this_report, other_reports_same_type)
+    links = create_links_html(this_report, other_reports_same_type, index_filename,
+                              most_similar_other_type=most_similar_other_type)
     
     extras = dict(extra_html_body_start=links,
                   extra_html_body_end='<pre>%s</pre>' % report.format_tree())

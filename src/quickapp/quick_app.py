@@ -1,11 +1,12 @@
 from .compmake_context import CompmakeContext
+from .exceptions import QuickAppException
 from .quick_app_base import QuickAppBase
 from .report_manager import ReportManager
 from abc import abstractmethod
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem, comp_prefix, get_comp_prefix)
 from conf_tools.utils import indent
-from contracts import contract
+from contracts import ContractsMeta, contract
 from decent_params.utils import wrap_script_entry_point, UserError
 from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
 import contracts
@@ -13,8 +14,6 @@ import os
 import sys
 import traceback
 import warnings
-from contracts.metaclass import ContractsMeta
-from quickapp.exceptions import QuickAppException
 
 
 __all__ = ['QuickApp', 'quickapp_main']
@@ -72,6 +71,7 @@ class QuickApp(QuickAppBase):
         return None
         
     def go(self):  
+         
         # check that if we have a parent who is a quickapp,
         # then use its context      
         qapp_parent = self.get_qapp_parent()
@@ -84,6 +84,14 @@ class QuickApp(QuickAppBase):
             # self.info('Parent not found')
             pass
             
+
+        if False:            
+            import resource
+            gbs = 5
+            max_mem = long(gbs * 1000 * 1048576L)
+            resource.setrlimit(resource.RLIMIT_AS, (max_mem, -1))
+            resource.setrlimit(resource.RLIMIT_DATA, (max_mem, -1))
+
         options = self.get_options()
         
         if self.get_qapp_parent() is None:
