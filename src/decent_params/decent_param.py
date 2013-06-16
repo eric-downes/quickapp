@@ -6,7 +6,7 @@ from .exceptions import  DecentParamsSemanticError
 
 not_given = 'DefaultNotGiven'
 
-class DecentParam():
+class DecentParam(object):
     
     def __init__(self, ptype, name, default=not_given, help=None,  # @ReservedAssignment
                 short=None, allow_multi=False, group=None):

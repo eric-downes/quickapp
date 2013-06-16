@@ -1,4 +1,6 @@
 from compmake import comp_store
+from compmake.utils import duration_human
+from conf_tools.utils import friendly_path
 from contracts import contract, describe_type, describe_value
 from pprint import pformat
 from quickapp import logger
@@ -25,6 +27,16 @@ class ReportManager(object):
 
         # report_type -> set of keys necessary
         self._report_types_format = {}
+        
+        self.html_resources_prefix = ''
+        
+    def set_html_resources_prefix(self, prefix):
+        """ 
+            Sets the prefix for the resources filename.
+        
+            example: set_resources_prefix('jbds')
+        """
+        self.html_resources_prefix = prefix + '-'
     
     def _check_report_format(self, report_type, **kwargs):
         keys = sorted(list(kwargs.keys()))
@@ -38,6 +50,11 @@ class ReportManager(object):
                 msg += '\ndoes not match previous format %r' % keys0
                 raise ValueError(msg)
         
+        
+    def get(self, report_type, **kwargs):
+        key = frozendict2(report=report_type, **kwargs)
+        return self.allreports[key]
+    
     @contract(report_type='str')
     def add(self, report, report_type, **kwargs):
         """
@@ -71,11 +88,15 @@ class ReportManager(object):
 
         self.allreports[key] = report
 
-        dirname = os.path.join(self.outdir, report_type)
-        basename = "_".join(map(str, kwargs.values()))  # XXX
-        basename = basename.replace('/', '_')  # XXX
-        if '/' in basename:
-            raise ValueError(basename)
+        report_type_sane = report_type.replace('_', '')
+        
+        key_no_report = dict(**key)
+        del key_no_report['report']
+        basename = self.html_resources_prefix + report_type_sane
+        if key_no_report:
+            basename += '-' + basename_from_key(key_no_report)
+        
+        dirname = os.path.join(self.outdir, report_type_sane)
         filename = os.path.join(dirname, basename) 
         self.allreports_filename[key] = filename + '.html'
         
@@ -97,10 +118,10 @@ class ReportManager(object):
         
         type2reports = {}    
         for report_type, xs in self.allreports_filename.groups_by_field_value('report'):
-            type2reports[report_type] = xs.remove_field('report')
+            type2reports[report_type] = StoreResults(**xs.remove_field('report'))
         
             
-        for key in self.allreports:
+        for key in self.allreports: 
             job_report = self.allreports[key]
             filename = self.allreports_filename[key] 
 
@@ -124,9 +145,15 @@ class ReportManager(object):
 #                                                             other_type, best))
                     others.append((other_type, best, other_type_reports[best]))
             
+            report_type_sane = report_type.replace('_', '')
+            report_nid = self.html_resources_prefix + report_type_sane
+            if key: 
+                report_nid += '-' + basename_from_key(key) 
             
             comp(write_report_and_update,
-                 job_report, filename, allreports_filename, self.index_filename,
+                 report=job_report, report_nid=report_nid,
+                report_html=filename, all_reports=allreports_filename,
+                index_filename=self.index_filename,
                  write_pickle=True,
                  this_report=key,
                  other_reports_same_type=other_reports_same_type,
@@ -155,7 +182,7 @@ def get_most_similar(reports_different_type, key):
     return best
     
     
-    
+@contract(other_reports_same_type=StoreResults)
 def create_links_html(this_report, other_reports_same_type, index_filename,
                       most_similar_other_type):
     '''
@@ -214,7 +241,7 @@ def create_links_html(this_report, other_reports_same_type, index_filename,
     return s
 
 # @contract(returns="list( tuple(str, list(tuple(str, None|str))))")
-@contract(returns="list( tuple(str, *))")
+@contract(returns="list( tuple(str, *))", other_reports_same_type=StoreResults)
 def create_links_html_table(this_report, other_reports_same_type):
     # Iterate over all keys (each key gets a column)
     
@@ -232,7 +259,7 @@ def create_links_html_table(this_report, other_reports_same_type):
         col = []
         for fv in field_values:
             if fv == this_report[field]:
-                res = ('%s (this)' % str(fv), None)
+                res = ('<span style="font-weight:bold">%s</span>' % str(fv), None)
             else:
                 # this is the variation obtained by changing only one field value
                 variation = dict(**this_report)
@@ -246,8 +273,8 @@ def create_links_html_table(this_report, other_reports_same_type):
         cols.append((field, col))
     return cols
     
-@contract(report=Report)
-def write_report_and_update(report, report_html, all_reports, index_filename,
+@contract(report=Report, report_nid='str', other_reports_same_type=StoreResults)
+def write_report_and_update(report, report_nid, report_html, all_reports, index_filename,
                             this_report,
                             other_reports_same_type,
                             most_similar_other_type,
@@ -261,24 +288,29 @@ def write_report_and_update(report, report_html, all_reports, index_filename,
                               most_similar_other_type=most_similar_other_type)
     
     extras = dict(extra_html_body_start=links,
-                  extra_html_body_end='<pre>%s</pre>' % report.format_tree())
+                extra_html_body_end='<pre>%s</pre>' % report.format_tree(),
+                )
+
+    report.nid = report_nid
     html = write_report(report, report_html, write_pickle=write_pickle, **extras)
     index_reports(reports=all_reports, index=index_filename, update=html)
 
 
+
 @contract(report=Report, report_html='str')
 def write_report(report, report_html, write_pickle=False, **kwargs): 
-    from conf_tools.utils import friendly_path
+    
     logger.debug('Writing to %r.' % friendly_path(report_html))
-    if False:
-        # Note here they might overwrite each other
-        rd = os.path.join(os.path.dirname(report_html), 'images')
-    else:
-        rd = None
+#     if False:
+#         # Note here they might overwrite each other
+#         rd = os.path.join(os.path.dirname(report_html), 'images')
+#     else:
+    rd = os.path.splitext(report_html)[0]
     report.to_html(report_html,
                    write_pickle=write_pickle, resources_dir=rd, **kwargs)
     # TODO: save hdf format
     return report_html
+
 
 
 @contract(reports=StoreResults, index=str)
@@ -290,8 +322,6 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
         reports[dict(report=...,param1=..., param2=...) ] => filename
     """
     # print('Updating because of new report %s' % update)
-    from compmake.utils import duration_human
-    import numpy as np
     
     dirname = os.path.dirname(index)
     if not os.path.exists(dirname):
@@ -478,3 +508,21 @@ def make_sections(allruns, common=None):
 
     
     
+@contract(key=dict, returns='str')
+def basename_from_key(key):
+    """ Returns a nice basename from a key 
+        that doesn't have special chars """
+    if not key:
+        raise ValueError('empty key')
+    keys_ordered = sorted(key.keys())
+    values = []
+    for k in keys_ordered:
+        value = key[k]
+        value = str(value)
+        value = value.replace('_', '')
+        value = value.replace('-', '')
+        value = value.replace('.', '')
+        values.append(value)
+    basename = "-".join(values)  
+    basename = basename.replace('/', '_')  # XXX
+    return basename

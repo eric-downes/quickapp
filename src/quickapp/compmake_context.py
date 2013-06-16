@@ -13,7 +13,6 @@ __all__ = ['CompmakeContext']
 class CompmakeContext(object):
 
     @contract(extra_dep='list', report_manager=ReportManager)
-#               resource_manager=ResourceManager)    
     def __init__(self, qapp, parent, job_prefix, report_manager,
                  output_dir, extra_dep=[], resource_manager=None, extra_report_keys=None):
         assert isinstance(parent, (CompmakeContext, NoneType))
@@ -178,6 +177,7 @@ class CompmakeContext(object):
         return self._resource_manager
     
     def needs(self, rtype, **params):
+        # print('%s %s %s %s %s' % (id(self), self._qapp, self._job_prefix, rtype, params))
         rm = self.get_resource_manager()
         res = rm.get_resource(rtype, **params)
         assert isinstance(res, Promise), describe_type(res)
@@ -188,11 +188,17 @@ class CompmakeContext(object):
         return rm.get_resource(rtype, **params)
     
     # Reports    
-    def add_report(self, report, report_type=None, **params):
+    @contract(report=Promise, report_type='str')
+    def add_report(self, report, report_type, **params):
         rm = self.get_report_manager()
         params.update(self.extra_report_keys)
         rm.add(report, report_type, **params)
 
+    @contract(returns=Promise, report_type='str')
+    def get_report(self, report_type, **params):
+        """ Returns the promise to the given report """
+        rm = self.get_report_manager()
+        return rm.get(report_type, **params)
 
     def get_report_manager(self):
         return self._report_manager

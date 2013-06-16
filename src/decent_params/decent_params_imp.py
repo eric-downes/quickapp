@@ -11,7 +11,7 @@ import warnings
 
 __all__ = ['DecentParams']
 
-class DecentParams():
+class DecentParams(object):
     
     def __init__(self, usage=None, prog=None):
         self.usage = usage

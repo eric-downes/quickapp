@@ -8,6 +8,8 @@ __all__ = ['iterate_context_names', 'iterate_context_names_pair', 'iterate_conte
 def iterate_context_names(context, it1):
     """ Creates child contexts with minimal names. """
     # make strings
+    if len(it1) == 0:
+        raise ValueError()
     names = map(str, it1)
     # get nonambiguous and minimal at _,- boundaries
     _, names, _ = minimal_names_at_boundaries(names)
