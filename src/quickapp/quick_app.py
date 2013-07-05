@@ -112,13 +112,13 @@ class QuickApp(QuickAppBase):
         
         
         # Report manager
-        reports = os.path.join(outdir, 'reports')
-        reports_index = os.path.join(outdir, 'reports.html')
-        report_manager = ReportManager(reports, reports_index)
+#         reports = os.path.join(outdir, 'reports')
+#         reports_index = os.path.join(outdir, 'reports.html')
+#         report_manager = ReportManager(reports, reports_index)
         
         job_prefix = None
         context = CompmakeContext(parent=None, qapp=self, job_prefix=job_prefix,
-                                  report_manager=report_manager,
+#                                   report_manager=report_manager,
                                   output_dir=outdir)
         self.context = context
         original = get_comp_prefix()
@@ -155,6 +155,7 @@ class QuickApp(QuickAppBase):
                        add_outdir=None,
                        add_job_prefix=None,
                        separate_resource_manager=False,
+                       separate_report_manager=False,
                        extra_report_keys=None):     
         instance = cmd_class()
         instance.set_parent(self)
@@ -167,6 +168,7 @@ class QuickApp(QuickAppBase):
                                           add_outdir=add_outdir,
                                           extra_report_keys=extra_report_keys,
                                           separate_resource_manager=separate_resource_manager,
+                                          separate_report_manager=separate_report_manager,
                                           add_job_prefix=add_job_prefix)  # XXX
         
             if isinstance(args, list):

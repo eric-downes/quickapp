@@ -9,7 +9,7 @@ def iterate_context_names(context, it1):
     """ Creates child contexts with minimal names. """
     # make strings
     if len(it1) == 0:
-        raise ValueError()
+        raise ValueError('Empty iterator: %s' % it1)
     names = map(str, it1)
     # get nonambiguous and minimal at _,- boundaries
     _, names, _ = minimal_names_at_boundaries(names)

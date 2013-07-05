@@ -12,16 +12,24 @@ __all__ = ['CompmakeContext']
 
 class CompmakeContext(object):
 
-    @contract(extra_dep='list', report_manager=ReportManager)
-    def __init__(self, qapp, parent, job_prefix, report_manager,
-                 output_dir, extra_dep=[], resource_manager=None, extra_report_keys=None):
+    @contract(extra_dep='list')
+    def __init__(self, qapp, parent, job_prefix,
+                 output_dir, extra_dep=[], resource_manager=None, extra_report_keys=None,
+                 report_manager=None):
         assert isinstance(parent, (CompmakeContext, NoneType))
         self._qapp = qapp
         self._parent = parent
         self._job_prefix = job_prefix
-        self._report_manager = report_manager
+        
         if resource_manager is None:
             resource_manager = ResourceManager(self)
+        
+        if report_manager is None:
+            reports = os.path.join(output_dir, 'reports')
+            reports_index = os.path.join(output_dir, 'reports.html')
+            report_manager = ReportManager(reports, reports_index)
+        
+        self._report_manager = report_manager
         self._resource_manager = resource_manager
         self._output_dir = output_dir
         self.n_comp_invocations = 0
@@ -94,7 +102,8 @@ class CompmakeContext(object):
     @contract(extra_dep='list')    
     def child(self, name, qapp=None, add_job_prefix=None, add_outdir=None, extra_dep=[],
               extra_report_keys=None,
-              separate_resource_manager=False):
+              separate_resource_manager=False,
+              separate_report_manager=False):
         """ 
             Returns child context 
         
@@ -135,7 +144,15 @@ class CompmakeContext(object):
             output_dir = self._output_dir
             
         warnings.warn('add prefix to report manager')
-        report_manager = self._report_manager
+        if separate_report_manager:
+            if add_outdir == '':
+                msg = ('Asked for separate report manager, but without changing output dir. '
+                       'This will make the reports overwrite each other.')
+                raise ValueError(msg)
+                
+            report_manager = None
+        else:    
+            report_manager = self._report_manager
         
         if separate_resource_manager:
             resource_manager = None  # CompmakeContext will create its own
@@ -161,6 +178,7 @@ class CompmakeContext(object):
     @contract(extra_dep='list')    
     def subtask(self, task, extra_dep=[], add_job_prefix=None, add_outdir=None,
                     separate_resource_manager=False,
+                    separate_report_manager=False,
                     extra_report_keys=None,
                     **task_config):
         return self._qapp.call_recursive(context=self, child_name=task.cmd,
@@ -169,6 +187,7 @@ class CompmakeContext(object):
                                          add_outdir=add_outdir,
                                          add_job_prefix=add_job_prefix,
                                          extra_report_keys=extra_report_keys,
+                                         separate_report_manager=separate_report_manager,
                                          separate_resource_manager=separate_resource_manager)
 
     # Resource managers
