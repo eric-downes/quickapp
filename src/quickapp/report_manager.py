@@ -30,6 +30,9 @@ class ReportManager(object):
         
         self.html_resources_prefix = ''
         
+        # check if we are called more than once; would be a bug
+        self.index_job_created = False
+        
     def set_html_resources_prefix(self, prefix):
         """ 
             Sets the prefix for the resources filename.
@@ -49,7 +52,6 @@ class ReportManager(object):
                 msg = 'Report %r %r' % (report_type, keys)
                 msg += '\ndoes not match previous format %r' % keys0
                 raise ValueError(msg)
-        
         
     def get(self, report_type, **kwargs):
         key = frozendict2(report=report_type, **kwargs)
@@ -101,6 +103,12 @@ class ReportManager(object):
         self.allreports_filename[key] = filename + '.html'
         
     def create_index_job(self):
+        if self.index_job_created:
+            msg = 'create_index_job() was already called once'
+            raise ValueError(msg)
+        self.index_job_created = True
+        
+        
         if not self.allreports:
             # no reports necessary
             return
@@ -154,7 +162,7 @@ class ReportManager(object):
                  report=job_report, report_nid=report_nid,
                 report_html=filename, all_reports=allreports_filename,
                 index_filename=self.index_filename,
-                 write_pickle=True,
+                 write_pickle=False,
                  this_report=key,
                  other_reports_same_type=other_reports_same_type,
                  most_similar_other_type=others,
@@ -240,7 +248,7 @@ def create_links_html(this_report, other_reports_same_type, index_filename,
     s = '<div style="margin-left: 1em;">' + s + '</div>'
     return s
 
-# @contract(returns="list( tuple(str, list(tuple(str, None|str))))")
+
 @contract(returns="list( tuple(str, *))", other_reports_same_type=StoreResults)
 def create_links_html_table(this_report, other_reports_same_type):
     # Iterate over all keys (each key gets a column)
@@ -272,6 +280,7 @@ def create_links_html_table(this_report, other_reports_same_type):
             col.append(res)
         cols.append((field, col))
     return cols
+    
     
 @contract(report=Report, report_nid='str', other_reports_same_type=StoreResults)
 def write_report_and_update(report, report_nid, report_html, all_reports, index_filename,

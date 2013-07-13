@@ -1,7 +1,6 @@
 from .compmake_context import CompmakeContext
 from .exceptions import QuickAppException
 from .quick_app_base import QuickAppBase
-from .report_manager import ReportManager
 from abc import abstractmethod
 from compmake import (batch_command, compmake_console, read_rc_files,
     use_filesystem, comp_prefix, get_comp_prefix)
@@ -14,6 +13,8 @@ import os
 import sys
 import traceback
 import warnings
+from compmake.state import set_compmake_db
+from compmake.storage.filesystem import StorageFilesystem
 
 
 __all__ = ['QuickApp', 'quickapp_main']
@@ -60,7 +61,6 @@ class QuickApp(QuickAppBase):
         self._define_options_compmake(params)
         self.define_options(params)
     
-    
     def get_qapp_parent(self):
         parent = self.parent
         while parent is not None:
@@ -103,29 +103,26 @@ class QuickApp(QuickAppBase):
 
         warnings.warn('removed configuration below')  # (start)
 
-        outdir = options.output
+        output_dir = options.output
         
         # Compmake storage for results        
-        storage = os.path.join(outdir, 'compmake')
-        use_filesystem(storage)
+        storage = os.path.join(output_dir, 'compmake')
+        sf = StorageFilesystem(storage, compress=True)
+#     sf = StorageFilesystem2(directory)
+#     sf = MemoryCache(sf)
+        set_compmake_db(sf)
+
+        # use_filesystem(storage)
         read_rc_files()
         
-        
-        # Report manager
-#         reports = os.path.join(outdir, 'reports')
-#         reports_index = os.path.join(outdir, 'reports.html')
-#         report_manager = ReportManager(reports, reports_index)
-        
-        job_prefix = None
-        context = CompmakeContext(parent=None, qapp=self, job_prefix=job_prefix,
-#                                   report_manager=report_manager,
-                                  output_dir=outdir)
+        context = CompmakeContext(parent=None, qapp=self, job_prefix=None,
+                                  output_dir=output_dir)
         self.context = context
         original = get_comp_prefix()
         self.define_jobs_context(context)
         comp_prefix(original) 
         
-        self.context.get_report_manager().create_index_job()
+        context.finalize_jobs()
         
         if context.n_comp_invocations == 0:
             # self.comp was never called
@@ -160,7 +157,7 @@ class QuickApp(QuickAppBase):
         instance = cmd_class()
         instance.set_parent(self)
         is_quickapp = isinstance(instance, QuickApp) 
-        # print('%s->%s %s' % (self, cmd_class, separate_resource_manager))
+
         try:
             # we are already in a context; just define jobs
             child_context = context.child(qapp=instance, name=child_name,
@@ -179,12 +176,12 @@ class QuickApp(QuickAppBase):
                 assert False
             
             if not is_quickapp:
-                # self.info('Instance is not quickapp! %s' % type(instance))
                 self.child_context = child_context
                 res = instance.go()  
             else:
                 instance.context = child_context
                 res = instance.define_jobs_context(child_context)
+                child_context.finalize_jobs()
                 
             # Add his jobs to our list of jobs
             context._jobs.update(child_context.all_jobs_dict()) 

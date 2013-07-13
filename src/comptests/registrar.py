@@ -136,12 +136,6 @@ def run_test_pair(function, id_ob, ob, id_ob2, ob2):
     return function(id_ob, ob, id_ob2, ob2)
 
 def recipe_instance_objects(context):
-    """
-        agent-learn (id_agent, id_robot)
-        
-        learns all episodes for the robot in the db
-    """
-
     @contract(objspec='str', id_object='str')
     def instance_test_object(context, master, objspec, id_object):
         return context.comp_config(instance_object, master, objspec, id_object,
@@ -151,13 +145,8 @@ def recipe_instance_objects(context):
     rm.set_resource_provider(INSTANCE_TEST_OBJECT, instance_test_object)
     rm.set_resource_prefix_function(INSTANCE_TEST_OBJECT, _make_prefix)
 
-def recipe_get_spec(context):
-    """
-        agent-learn (id_agent, id_robot)
-        
-        learns all episodes for the robot in the db
-    """
 
+def recipe_get_spec(context):
     @contract(objspec='str', id_object='str')
     def get_the_spec(context, master, objspec, id_object):
         return context.comp_config(get_spec, master, objspec, id_object,
@@ -166,6 +155,7 @@ def recipe_get_spec(context):
     rm = context.get_resource_manager()        
     rm.set_resource_provider(GETSPEC_TEST_OBJECT, get_the_spec)
     rm.set_resource_prefix_function(GETSPEC_TEST_OBJECT, _make_prefix)
+
 
 def get_objspec(master_name, objspec_name):
     master = GlobalConfig._masters[master_name]

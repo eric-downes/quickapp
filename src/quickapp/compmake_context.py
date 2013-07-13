@@ -25,9 +25,12 @@ class CompmakeContext(object):
             resource_manager = ResourceManager(self)
         
         if report_manager is None:
+            self.private_report_manager = True  # only create indexe if this is true
             reports = os.path.join(output_dir, 'reports')
             reports_index = os.path.join(output_dir, 'reports.html')
             report_manager = ReportManager(reports, reports_index)
+        else:
+            self.private_report_manager = False
         
         self._report_manager = report_manager
         self._resource_manager = resource_manager
@@ -38,6 +41,11 @@ class CompmakeContext(object):
         if extra_report_keys is None:
             extra_report_keys = {}
         self.extra_report_keys = extra_report_keys
+        
+    def finalize_jobs(self):
+        """ After all jobs have been defined, we create index jobs. """
+        if self.private_report_manager:
+            self.get_report_manager().create_index_job()
         
     def __str__(self):
         return 'CC(%s, %s)' % (type(self._qapp).__name__, self._job_prefix)
@@ -79,7 +87,7 @@ class CompmakeContext(object):
     @contract(returns=Promise)
     def comp_config(self, f, *args, **kwargs):
         """ 
-            We automatically save the GlobalConfig state.
+            Like comp, but we also automatically save the GlobalConfig state.
         """
         config_state = GlobalConfig.get_state()
         # so that compmake can use a good name
