@@ -80,7 +80,7 @@ class CompTests(QuickApp):
         self.info('Found %d apps: %s' % (len(apps), apps))
         
         for a in apps:
-            print('Subtasking %r' % a)
+            # print('Subtasking %r' % a)
             context.subtask(a)
             
     def load_nosetests(self, context, module_name):
