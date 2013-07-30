@@ -50,6 +50,12 @@ class QuickAppBase(HasLogger):
         """
         pass
     
+    @classmethod
+    def get_sys_main(cls):
+        """ Returns a function to be used as main function for a script. """
+        from quickapp import quickapp_main
+        return lambda: quickapp_main(cls, args=None, sys_exit=True)
+    
     
     
     @classmethod
@@ -202,10 +208,4 @@ class QuickAppBase(HasLogger):
             msg += indent(traceback.format_exc(e), '> ')
             raise Exception(msg)  # XXX class
         
-    @classmethod
-    def get_sys_main(cls):
-        """ Returns a function to be used as main function for a script. """
-        from quickapp import quickapp_main
-        return lambda: quickapp_main(cls, args=None, sys_exit=True)
-    
  
