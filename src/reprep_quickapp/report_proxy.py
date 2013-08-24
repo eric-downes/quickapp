@@ -4,9 +4,10 @@ from quickapp import CompmakeContext
 from quickapp.report_manager import basename_from_key
 from reprep import Report, logger
 from reprep.structures import NotExistent
+from copy import deepcopy
 
 
-__all__ = ['ReportProxy']
+__all__ = ['ReportProxy', 'get_node']
 
 
 class FigureProxy(object):
@@ -66,7 +67,7 @@ class ReportProxy(object):
 @contract(url=str, r=Report, returns=Report)
 def get_node(url, r, strict=True):
     try:
-        return r.resolve_url(url)
+        node = r.resolve_url(url)
     except NotExistent as e:
         if strict:
             logger.error('Error while getting url %r\n%s' % (url,
@@ -75,6 +76,10 @@ def get_node(url, r, strict=True):
         else:
             logger.warn('Ignoring error: %s' % e)
             return Report()
+
+    node = deepcopy(node)
+    node.parent = None
+    return node
 
 
 @contract(resources='dict', id_parent='str', child=Report, nid='str')
