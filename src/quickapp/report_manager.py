@@ -295,10 +295,11 @@ def write_report_and_update(report, report_nid, report_html, all_reports, index_
     
     links = create_links_html(this_report, other_reports_same_type, index_filename,
                               most_similar_other_type=most_similar_other_type)
+
+    tree_html = '<pre style="display:none">%s</pre>' % report.format_tree()
     
     extras = dict(extra_html_body_start=links,
-                extra_html_body_end='<pre>%s</pre>' % report.format_tree(),
-                )
+                  extra_html_body_end=tree_html)
 
     report.nid = report_nid
     html = write_report(report, report_html, write_pickle=write_pickle, **extras)
