@@ -1,5 +1,11 @@
+QuickApp
+========
 
-## Simplest QuickApp application ##
+QuickApp is a library that composes the functionality of Compmake, Reprep 
+in high-level constructs for extremely rapid development of scientific applications.
+
+Simplest QuickApp application
+-----------------------------
 
 This is an example of the simplest QuickApp application.
 It does not use Compmake functionality. ::
@@ -17,4 +23,6 @@ It does not use Compmake functionality. ::
 
      main = VideoMaker.get_sys_main()
      
+     
+
      
