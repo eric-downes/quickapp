@@ -2,8 +2,9 @@ from .compmake_context import CompmakeContext
 from .exceptions import QuickAppException
 from .quick_app_base import QuickAppBase
 from abc import abstractmethod
-from compmake import (batch_command, compmake_console, read_rc_files,
-    use_filesystem, comp_prefix, get_comp_prefix)
+from compmake import (batch_command, compmake_console, read_rc_files, comp_prefix,
+    get_comp_prefix, set_compmake_db)
+from compmake.storage.filesystem import StorageFilesystem
 from conf_tools.utils import indent
 from contracts import ContractsMeta, contract
 from decent_params.utils import wrap_script_entry_point, UserError
@@ -13,8 +14,6 @@ import os
 import sys
 import traceback
 import warnings
-from compmake.state import set_compmake_db
-from compmake.storage.filesystem import StorageFilesystem
 
 
 __all__ = ['QuickApp', 'quickapp_main']
@@ -37,6 +36,9 @@ class QuickApp(QuickAppBase):
     def define_options(self, params):
         """ Define options for the application. """
         pass
+
+
+    # Implementation
              
     def _define_options_compmake(self, params):
         script_name = self.get_prog_name()

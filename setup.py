@@ -35,12 +35,12 @@ setup(name='QuickApp',
       
       entry_points={
         'console_scripts': [
-       'comptests = comptests:main_comptests'
+       # 'comptests = comptests:main_comptests'
        ]
       },
       package_dir={'':'src'},
       packages=find_packages('src'),
-      install_requires=['compmake', 'reprep', 'PyContracts'],
+      install_requires=['compmake', 'reprep', 'PyContracts', 'DecentLogs'],
       tests_require=['nose'],
 )
 

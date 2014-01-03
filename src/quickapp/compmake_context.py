@@ -229,6 +229,11 @@ class CompmakeContext(object):
 
     def get_report_manager(self):
         return self._report_manager
+    
+    def add_extra_report_keys(self, **keys):
+        warnings.warn('check conflict')
+        self.extra_report_keys.update(keys)
+        
 
 def wrap_state(config_state, f, *args, **kwargs):
     config_state.restore()
