@@ -10,8 +10,8 @@ from contracts import contract, describe_value, ContractsMeta
 from decent_params import DecentParams, UserError
 from decent_params.exceptions import DecentParamsUserError
 from quickapp import logger
-from quickapp.exceptions import QuickAppException
 
+from .exceptions import QuickAppException
 from .utils import HasLogger
 
 
@@ -34,11 +34,23 @@ class QuickAppBase(HasLogger):
         HasLogger.__init__(self)
         self.parent = parent
         
+        self._init_logger()
+
+    def _init_logger(self):
         logger_name = self.get_prog_name()
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.DEBUG)
         self.logger = logger
     
+    def __getstate__(self):
+        d = dict(self.__dict__)
+        del d['logger']
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__.update(d)
+        self._init_logger()
+
     @abstractmethod
     def define_program_options(self, params):
         """ Must be implemented by the subclass. """

@@ -111,8 +111,10 @@ class CompmakeContext(Context):
     def comp_config_dynamic(self, f, *args, **kwargs):
         """ Defines jobs that will take a "context" argument to define
             more jobs. """
-        return self.comp_config(f, *args, needs_context=True, **kwargs)
-
+        config_state = GlobalConfig.get_state()
+        # so that compmake can use a good name
+        kwargs['command_name'] = f.__name__
+        return self.comp_dynamic(wrap_state_dynamic, config_state, f, *args, **kwargs)
 
     def count_comp_invocations(self):
         self.n_comp_invocations += 1
@@ -259,7 +261,11 @@ def wrap_state(config_state, f, *args, **kwargs):
     """ Used internally by comp_config() """
     config_state.restore()
     return f(*args, **kwargs)
-    
+
+def wrap_state_dynamic(context, config_state, f, *args, **kwargs):
+    """ Used internally by comp_config_dynamic() """
+    config_state.restore()
+    return f(context, *args, **kwargs)
     
 def checkpoint(name, prev_jobs):
     pass
