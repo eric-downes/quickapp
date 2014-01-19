@@ -1,4 +1,4 @@
-from compmake import comp_store
+from compmake import Promise
 from compmake.utils import duration_human
 from conf_tools.utils import friendly_path
 from contracts import contract, describe_type, describe_value
@@ -10,6 +10,7 @@ from reprep.utils import frozendict2, natsorted
 import numpy as np
 import os
 import time
+from compmake.context import Context
 
 __all__ = ['ReportManager']
 
@@ -70,7 +71,7 @@ class ReportManager(object):
             msg = 'Need a string for report_type, got %r.' % describe_value(report_type)
             raise ValueError(msg)
         
-        from compmake import Promise
+
         if not isinstance(report, Promise):
             msg = ('ReportManager is mean to be given Promise objects, '
                    'which are the output of comp(). Obtained: %s' 
@@ -102,7 +103,8 @@ class ReportManager(object):
         filename = os.path.join(dirname, basename) 
         self.allreports_filename[key] = filename + '.html'
         
-    def create_index_job(self):
+    @contract(context=Context)
+    def create_index_job(self, context):
         if self.index_job_created:
             msg = 'create_index_job() was already called once'
             raise ValueError(msg)
@@ -113,14 +115,13 @@ class ReportManager(object):
             # no reports necessary
             return
         
-        from compmake import comp
         
         # Do not pass as argument, it will take lots of memory!
         # XXX FIXME: there should be a way to make this update or not
         # otherwise new reports do not appear
         optimize_space = False
         if optimize_space and len(self.allreports_filename) > 100:
-            allreports_filename = comp_store(self.allreports_filename, 'allfilenames')
+            allreports_filename = context.comp_store(self.allreports_filename, 'allfilenames')
         else:
             allreports_filename = self.allreports_filename
         
@@ -158,7 +159,7 @@ class ReportManager(object):
             if key: 
                 report_nid += '-' + basename_from_key(key) 
             
-            comp(write_report_and_update,
+            context.comp(write_report_and_update,
                  report=job_report, report_nid=report_nid,
                 report_html=filename, all_reports=allreports_filename,
                 index_filename=self.index_filename,

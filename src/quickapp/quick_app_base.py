@@ -1,16 +1,19 @@
 from abc import abstractmethod
+import logging
+import os
+from pprint import pformat
+import sys
+import traceback
+
 from conf_tools.utils import indent
 from contracts import contract, describe_value, ContractsMeta
 from decent_params import DecentParams, UserError
-from pprint import pformat
-from .utils import HasLogger
-from quickapp import logger
-import logging
-import os
-import sys
-import traceback
-from quickapp.exceptions import QuickAppException
 from decent_params.exceptions import DecentParamsUserError
+from quickapp import logger
+from quickapp.exceptions import QuickAppException
+
+from .utils import HasLogger
+
 
 __all__ = ['QuickAppBase']
 
@@ -55,8 +58,6 @@ class QuickAppBase(HasLogger):
         """ Returns a function to be used as main function for a script. """
         from quickapp import quickapp_main
         return lambda: quickapp_main(cls, args=None, sys_exit=True)
-    
-    
     
     @classmethod
     def get_program_description(cls):

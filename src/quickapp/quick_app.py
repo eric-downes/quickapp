@@ -1,19 +1,19 @@
-from .compmake_context import CompmakeContext
-from .exceptions import QuickAppException
-from .quick_app_base import QuickAppBase
 from abc import abstractmethod
-from compmake import (batch_command, compmake_console, read_rc_files, comp_prefix,
-    get_comp_prefix, set_compmake_db)
-from compmake.storage.filesystem import StorageFilesystem
-from conf_tools.utils import indent
-from contracts import ContractsMeta, contract
-from decent_params.utils import wrap_script_entry_point, UserError
-from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
-import contracts
 import os
 import sys
 import traceback
 import warnings
+
+from compmake import read_rc_files, StorageFilesystem
+from conf_tools.utils import indent
+from contracts import ContractsMeta, contract
+import contracts
+from decent_params.utils import wrap_script_entry_point, UserError
+from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
+
+from .compmake_context import CompmakeContext
+from .exceptions import QuickAppException
+from .quick_app_base import QuickAppBase
 
 
 __all__ = ['QuickApp', 'quickapp_main']
@@ -109,20 +109,16 @@ class QuickApp(QuickAppBase):
         
         # Compmake storage for results        
         storage = os.path.join(output_dir, 'compmake')
-        sf = StorageFilesystem(storage, compress=True)
-#     sf = StorageFilesystem2(directory)
-#     sf = MemoryCache(sf)
-        set_compmake_db(sf)
+        db = StorageFilesystem(storage, compress=True)
 
-        # use_filesystem(storage)
-        read_rc_files()
-        
-        context = CompmakeContext(parent=None, qapp=self, job_prefix=None,
+        context = CompmakeContext(db=db, parent=None, qapp=self, job_prefix=None,
                                   output_dir=output_dir)
+        read_rc_files(context)
+        
         self.context = context
-        original = get_comp_prefix()
+        original = self.context.get_comp_prefix()
         self.define_jobs_context(context)
-        comp_prefix(original) 
+        self.context.comp_prefix(original)
         
         context.finalize_jobs()
         
@@ -132,7 +128,7 @@ class QuickApp(QuickAppBase):
             raise ValueError(msg)
         else: 
             if not options.console:
-                batch_result = batch_command(options.command)
+                batch_result = self.context.batch_command(options.command)
                 if isinstance(batch_result, str):
                     ret = QUICKAPP_COMPUTATION_ERROR
                 elif isinstance(batch_result, int):
@@ -145,7 +141,7 @@ class QuickApp(QuickAppBase):
                     assert False 
                 return ret
             else:
-                compmake_console()
+                self.context.compmake_console()
                 return 0
 
     @contract(args='dict(str:*)|list(str)', extra_dep='list')

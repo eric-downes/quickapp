@@ -1,21 +1,26 @@
-from .resource_manager import ResourceManager
-from .report_manager import ReportManager
-from compmake import Promise, comp, comp_prefix
-from contracts import contract, describe_type
-from types import NoneType
 import os
+from types import NoneType
 import warnings
+
+from compmake import Context, Promise
 from conf_tools import GlobalConfig
+from contracts import contract, describe_type
+
+from .report_manager import ReportManager
+from .resource_manager import ResourceManager
+
 
 __all__ = ['CompmakeContext']
 
 
-class CompmakeContext(object):
+class CompmakeContext(Context):
 
     @contract(extra_dep='list')
-    def __init__(self, qapp, parent, job_prefix,
-                 output_dir, extra_dep=[], resource_manager=None, extra_report_keys=None,
+    def __init__(self, db, qapp, parent, job_prefix,
+                 output_dir, extra_dep=[], resource_manager=None,
+                 extra_report_keys=None,
                  report_manager=None):
+        Context.__init__(self, db=db)
         assert isinstance(parent, (CompmakeContext, NoneType))
         self._qapp = qapp
         self._parent = parent
@@ -45,7 +50,7 @@ class CompmakeContext(object):
     def finalize_jobs(self):
         """ After all jobs have been defined, we create index jobs. """
         if self.private_report_manager:
-            self.get_report_manager().create_index_job()
+            self.get_report_manager().create_index_job(self)
         
     def __str__(self):
         return 'CC(%s, %s)' % (type(self._qapp).__name__, self._job_prefix)
@@ -71,16 +76,20 @@ class CompmakeContext(object):
         self._extra_dep.append(job_checkpoint)
         return job_checkpoint
     
+    #
+    # Wrappers form Compmake's "comp".
+    #
     @contract(returns=Promise)
     def comp(self, f, *args, **kwargs):
         """ 
             Simple wrapper for Compmake's comp function. 
-            Use this instead of "comp". """
+            Use this instead of "comp". 
+        """
         self.count_comp_invocations()
-        comp_prefix(self._job_prefix)
+        self.comp_prefix(self._job_prefix)
         extra_dep = self._extra_dep + kwargs.get('extra_dep', [])
         kwargs['extra_dep'] = extra_dep
-        promise = comp(f, *args, **kwargs)
+        promise = Context.comp(self, f, *args, **kwargs)
         self._jobs[promise.job_id] = promise
         return promise
     
@@ -93,7 +102,18 @@ class CompmakeContext(object):
         # so that compmake can use a good name
         kwargs['command_name'] = f.__name__
         return self.comp(wrap_state, config_state, f, *args, **kwargs)
-    
+
+    @contract(returns=Promise)
+    def comp_dynamic(self, f, *args, **kwargs):
+        return self.comp(f, *args, needs_context=True, **kwargs)
+
+    @contract(returns=Promise)
+    def comp_config_dynamic(self, f, *args, **kwargs):
+        """ Defines jobs that will take a "context" argument to define
+            more jobs. """
+        return self.comp_config(f, *args, needs_context=True, **kwargs)
+
+
     def count_comp_invocations(self):
         self.n_comp_invocations += 1
         if self._parent is not None:
@@ -174,7 +194,7 @@ class CompmakeContext(object):
         if extra_report_keys is not None:
             extra_report_keys_.update(extra_report_keys)
         
-        c1 = CompmakeContext(qapp=qapp, parent=self,
+        c1 = CompmakeContext(db=self.db, qapp=qapp, parent=self,
                                job_prefix=job_prefix,
                                report_manager=report_manager,
                                resource_manager=resource_manager,
@@ -236,6 +256,7 @@ class CompmakeContext(object):
         
 
 def wrap_state(config_state, f, *args, **kwargs):
+    """ Used internally by comp_config() """
     config_state.restore()
     return f(*args, **kwargs)
     

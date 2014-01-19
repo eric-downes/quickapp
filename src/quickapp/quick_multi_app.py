@@ -1,5 +1,5 @@
 from .quick_app_base import QuickAppBase
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod
 from collections import defaultdict
 from conf_tools.utils import indent, termcolor_colored
 from decent_params import UserError
