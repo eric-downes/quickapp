@@ -2,9 +2,10 @@ import os
 from types import NoneType
 import warnings
 
+from contracts import contract, describe_type
+
 from compmake import Context, Promise
 from conf_tools import GlobalConfig
-from contracts import contract, describe_type
 
 from .report_manager import ReportManager
 from .resource_manager import ResourceManager
@@ -130,7 +131,10 @@ class CompmakeContext(Context):
         return self._output_dir
         
     @contract(extra_dep='list')    
-    def child(self, name, qapp=None, add_job_prefix=None, add_outdir=None, extra_dep=[],
+    def child(self, name, qapp=None,
+              add_job_prefix=None,
+              add_outdir=None,
+              extra_dep=[],
               extra_report_keys=None,
               separate_resource_manager=False,
               separate_report_manager=False):
@@ -196,7 +200,7 @@ class CompmakeContext(Context):
         if extra_report_keys is not None:
             extra_report_keys_.update(extra_report_keys)
         
-        c1 = CompmakeContext(db=self.db, qapp=qapp, parent=self,
+        c1 = CompmakeContext(db=self.get_compmake_db(), qapp=qapp, parent=self,
                                job_prefix=job_prefix,
                                report_manager=report_manager,
                                resource_manager=resource_manager,
@@ -204,6 +208,12 @@ class CompmakeContext(Context):
                                output_dir=output_dir,
                                extra_dep=_extra_dep)
         return c1
+
+    @contract(job_id=str)
+    def add_job_defined_in_this_session(self, job_id):
+        self._jobs_defined_in_this_session.add(job_id)
+        if self._parent is not None:
+            self._parent.add_job_defined_in_this_session(job_id)
 
     @contract(extra_dep='list')    
     def subtask(self, task, extra_dep=[], add_job_prefix=None, add_outdir=None,

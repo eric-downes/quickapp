@@ -110,7 +110,7 @@ class QuickApp(QuickAppBase):
         # Compmake storage for results        
         storage = os.path.join(output_dir, 'compmake')
         db = StorageFilesystem(storage, compress=True)
-
+        print('quickapp using db %s' % storage)
         context = CompmakeContext(db=db, parent=None, qapp=self, job_prefix=None,
                                   output_dir=output_dir)
         read_rc_files(context)
