@@ -9,6 +9,7 @@ from conf_tools import GlobalConfig
 
 from .report_manager import ReportManager
 from .resource_manager import ResourceManager
+from compmake.context import load_static_storage
 
 
 __all__ = ['CompmakeContext']
@@ -48,6 +49,8 @@ class CompmakeContext(Context):
             extra_report_keys = {}
         self.extra_report_keys = extra_report_keys
         
+        self._promise = None
+
     def finalize_jobs(self):
         """ After all jobs have been defined, we create index jobs. """
         if self.private_report_manager:
@@ -106,7 +109,8 @@ class CompmakeContext(Context):
 
     @contract(returns=Promise)
     def comp_dynamic(self, f, *args, **kwargs):
-        return self.comp(f, *args, needs_context=True, **kwargs)
+        context = self._get_promise()
+        return self.comp(f, context, *args, **kwargs)
 
     @contract(returns=Promise)
     def comp_config_dynamic(self, f, *args, **kwargs):
@@ -200,13 +204,14 @@ class CompmakeContext(Context):
         if extra_report_keys is not None:
             extra_report_keys_.update(extra_report_keys)
         
-        c1 = CompmakeContext(db=self.get_compmake_db(), qapp=qapp, parent=self,
-                               job_prefix=job_prefix,
-                               report_manager=report_manager,
-                               resource_manager=resource_manager,
-                               extra_report_keys=extra_report_keys_,
-                               output_dir=output_dir,
-                               extra_dep=_extra_dep)
+        c1 = CompmakeContext(db=self.get_compmake_db(),
+                            qapp=qapp, parent=self,
+                           job_prefix=job_prefix,
+                           report_manager=report_manager,
+                           resource_manager=resource_manager,
+                           extra_report_keys=extra_report_keys_,
+                           output_dir=output_dir,
+                           extra_dep=_extra_dep)
         return c1
 
     @contract(job_id=str)
@@ -265,17 +270,28 @@ class CompmakeContext(Context):
     def add_extra_report_keys(self, **keys):
         warnings.warn('check conflict')
         self.extra_report_keys.update(keys)
-        
+
+    @contract(returns=Promise)
+    def _get_promise(self):
+        """ Returns the promise object representing this context. """
+        if self._promise is None:
+            warnings.warn('Need IDs for contexts, using job_prefix.')
+            self._promise_job_id = 'context'  # -%s' % self._job_prefix
+            self._promise = self.comp(load_static_storage, self, job_id=self._promise_job_id)
+        return self._promise
+
 
 def wrap_state(config_state, f, *args, **kwargs):
     """ Used internally by comp_config() """
     config_state.restore()
     return f(*args, **kwargs)
 
+
 def wrap_state_dynamic(context, config_state, f, *args, **kwargs):
     """ Used internally by comp_config_dynamic() """
     config_state.restore()
     return f(context, *args, **kwargs)
+
     
 def checkpoint(name, prev_jobs):
     pass

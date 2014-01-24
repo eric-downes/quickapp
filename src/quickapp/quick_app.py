@@ -111,7 +111,9 @@ class QuickApp(QuickAppBase):
         storage = os.path.join(output_dir, 'compmake')
         db = StorageFilesystem(storage, compress=True)
         print('quickapp using db %s' % storage)
-        context = CompmakeContext(db=db, parent=None, qapp=self, job_prefix=None,
+#         currently_executing = ['root']
+        context = CompmakeContext(db=db,  # currently_executing=currently_executing,
+                                  parent=None, qapp=self, job_prefix=None,
                                   output_dir=output_dir)
         read_rc_files(context)
         

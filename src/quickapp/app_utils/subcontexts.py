@@ -1,8 +1,14 @@
-from contracts import contract
 import os
 
-__all__ = ['iterate_context_names', 'iterate_context_names_pair', 'iterate_context_names_triplet',
-           'iterate_context_names_quartet']
+from contracts import contract
+
+
+__all__ = [
+   'iterate_context_names',
+   'iterate_context_names_pair',
+   'iterate_context_names_triplet',
+   'iterate_context_names_quartet',
+]
 
 
 def iterate_context_names(context, it1):
@@ -29,6 +35,7 @@ def iterate_context_names_pair(context, it1, it2):
         for c, x2 in iterate_context_names(cc, it2):
             yield c, x1, x2
 
+
 def iterate_context_names_triplet(context, it1, it2, it3):
     """
         Yields tuples of (context, s1, s2, s3).
@@ -37,6 +44,7 @@ def iterate_context_names_triplet(context, it1, it2, it3):
         for c2, x2 in iterate_context_names(c1, it2):
             for c3, x3 in iterate_context_names(c2, it3):
                 yield c3, x1, x2, x3
+
 
 def iterate_context_names_quartet(context, it1, it2, it3, it4):
     """
@@ -47,6 +55,7 @@ def iterate_context_names_quartet(context, it1, it2, it3, it4):
             for c3, x3 in iterate_context_names(c2, it3):
                 for c4, x4 in iterate_context_names(c3, it4):
                     yield c4, x1, x2, x3, x4
+
 
 def iterate_context_names_quintuplet(context, it1, it2, it3, it4, it5):
     """
@@ -195,8 +204,6 @@ def minimal_names_at_boundaries(objects, separators=['_', '-']):
     
     assert objects == objects2, (objects, objects2, (prefix, minimal, postfix))
     return prefix, minimal, postfix
-    
-    
     
     
     
