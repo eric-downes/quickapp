@@ -5,11 +5,11 @@ import warnings
 from contracts import contract, describe_type
 
 from compmake import Context, Promise
+from compmake.context import load_static_storage
 from conf_tools import GlobalConfig
 
 from .report_manager import ReportManager
 from .resource_manager import ResourceManager
-from compmake.context import load_static_storage
 
 
 __all__ = ['CompmakeContext']
@@ -283,13 +283,14 @@ class CompmakeContext(Context):
 
 def wrap_state(config_state, f, *args, **kwargs):
     """ Used internally by comp_config() """
+    print('restoring state')
     config_state.restore()
     return f(*args, **kwargs)
-
 
 def wrap_state_dynamic(context, config_state, f, *args, **kwargs):
     """ Used internally by comp_config_dynamic() """
     config_state.restore()
+    print('restoring state')
     return f(context, *args, **kwargs)
 
     

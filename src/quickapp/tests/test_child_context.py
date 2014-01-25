@@ -5,6 +5,7 @@ from compmake.unittests.compmake_test import CompmakeTest
 from quickapp import QuickApp, quickapp_main
 from quickapp.app_utils import iterate_context_names
 from quickapp.compmake_context import CompmakeContext
+from quickapp.tests.quickappbase import QuickappTest
 
 
 def f(name):
@@ -49,13 +50,10 @@ class QuickAppDemoChild2(QuickApp):
 
 
 @istest
-class CompappTestDynamic2(CompmakeTest):
+class CompappTestDynamic2(QuickappTest):
 
     def compapp_test1(self):
-        # Define and list
-        args = ['-o', self.root0, '-c', 'ls']
-        self.assertEqual(0, quickapp_main(QuickAppDemoChild2, args,
-                                          sys_exit=False))
+        self.run_quickapp(qapp=QuickAppDemoChild2, cmd='ls')
 
         # These are the jobs currently defined
         self.assertJobsEqual('all', ['a-define_jobs',
