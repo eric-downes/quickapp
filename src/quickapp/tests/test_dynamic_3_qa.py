@@ -1,9 +1,8 @@
 from nose.tools import istest
-from compmake.unittests.compmake_test import CompmakeTest
+
 from quickapp.app_utils.subcontexts import iterate_context_names
 from quickapp.quick_app import QuickApp
 from quickapp.tests.quickappbase import QuickappTest
-
 
 
 def f(name):
@@ -78,3 +77,4 @@ class TestDynamic3(QuickappTest):
                                      'b-n-f',
                                      ])
         self.assert_cmd_success('details a-m-f')
+        self.assert_defined_by('a-m-f', ['root', 'a-m-define_jobs1', 'a-m-define_jobs2'])

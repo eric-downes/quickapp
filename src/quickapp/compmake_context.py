@@ -17,12 +17,12 @@ __all__ = ['CompmakeContext']
 
 class CompmakeContext(Context):
 
-    @contract(extra_dep='list')
-    def __init__(self, db, qapp, parent, job_prefix,
+    @contract(extra_dep='list', currently_executing='list(str)')
+    def __init__(self, currently_executing, db, qapp, parent, job_prefix,
                  output_dir, extra_dep=[], resource_manager=None,
                  extra_report_keys=None,
                  report_manager=None):
-        Context.__init__(self, db=db)
+        Context.__init__(self, db=db, currently_executing=currently_executing)
         assert isinstance(parent, (CompmakeContext, NoneType))
         self._qapp = qapp
         self._parent = parent
@@ -205,6 +205,7 @@ class CompmakeContext(Context):
             extra_report_keys_.update(extra_report_keys)
         
         c1 = CompmakeContext(db=self.get_compmake_db(),
+                             currently_executing=list(self.currently_executing),
                             qapp=qapp, parent=self,
                            job_prefix=job_prefix,
                            report_manager=report_manager,
