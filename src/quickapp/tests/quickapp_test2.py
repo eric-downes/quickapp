@@ -3,6 +3,10 @@ from quickapp import (QuickApp, QUICKAPP_USER_ERROR, QUICKAPP_COMPUTATION_ERROR,
     quickapp_main)
 from reprep import Report
 from unittest.case import TestCase
+from quickapp.tests.quickappbase import QuickappTest
+from nose.tools import istest
+from tempfile import mkdtemp
+from shutil import rmtree
 
 def actual_computation(param1, param2):
     print('computing (%s %s)' % (param1, param2))
@@ -35,8 +39,9 @@ class QuickAppDemo2(QuickApp):
         rj = context.comp(report_example, param2, samples)
         context.add_report(rj, 'report_example')
         
-        
-class CompappTest1(TestCase):
+
+@istest
+class CompappTest1(QuickappTest):
     
     def compapp_test1(self):
         cases = []
@@ -44,24 +49,28 @@ class CompappTest1(TestCase):
         def add(args, ret):
             cases.append(dict(args=args, ret=ret))
             
-        add('--contracts -o quickapp_test1 -c clean;make --param1 10 --param2 1', 0)
+        add('--contracts -c clean;make --param1 10 --param2 1', 0)
 
         # parse error
-        add('--contracts -o quickapp_test2 -c clean;make  --param1 10 --parm2 1',
+        add('--contracts -c clean;make  --param1 10 --parm2 1',
             QUICKAPP_USER_ERROR)  
 
         # computation exception
-        add('--contracts -o quickapp_test2 -c clean;make  --param1 10 --param2 -1',
+        add('--contracts  -c clean;make  --param1 10 --param2 -1',
             QUICKAPP_COMPUTATION_ERROR)  
 
         for c in cases:
             args = c['args']
+
             if isinstance(args, str):
                 args = args.split()
+            tmpdir = mkdtemp()
+            args = ['-o', tmpdir] + args
             ret = c['ret']
             ret_found = quickapp_main(QuickAppDemo2, args, sys_exit=False)
             msg = 'Expected %d, got %d.\nArguments: %s ' % (ret, ret_found, c['args'])   
             self.assertEqual(ret, ret_found, msg)    
+            rmtree(tmpdir)
 
 if __name__ == '__main__':
     quickapp_main(QuickAppDemo2)

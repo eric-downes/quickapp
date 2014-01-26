@@ -35,7 +35,7 @@ class CompmakeContext(Context):
             self.private_report_manager = True  # only create indexe if this is true
             reports = os.path.join(output_dir, 'reports')
             reports_index = os.path.join(output_dir, 'reports.html')
-            report_manager = ReportManager(reports, reports_index)
+            report_manager = ReportManager(self, reports, reports_index)
         else:
             self.private_report_manager = False
         
@@ -244,20 +244,20 @@ class CompmakeContext(Context):
     def needs(self, rtype, **params):
         # print('%s %s %s %s %s' % (id(self), self._qapp, self._job_prefix, rtype, params))
         rm = self.get_resource_manager()
-        res = rm.get_resource(rtype, **params)
+        res = rm.get_resource_job(self, rtype, **params)
         assert isinstance(res, Promise), describe_type(res)
         self._extra_dep.append(res)
 
     def get_resource(self, rtype, **params):
         rm = self.get_resource_manager()
-        return rm.get_resource(rtype, **params)
+        return rm.get_resource_job(self, rtype, **params)
     
     # Reports    
     @contract(report=Promise, report_type='str')
     def add_report(self, report, report_type, **params):
         rm = self.get_report_manager()
         params.update(self.extra_report_keys)
-        rm.add(report, report_type, **params)
+        rm.add(self, report, report_type, **params)
 
     @contract(returns=Promise, report_type='str')
     def get_report(self, report_type, **params):
@@ -271,6 +271,10 @@ class CompmakeContext(Context):
     def add_extra_report_keys(self, **keys):
         warnings.warn('check conflict')
         self.extra_report_keys.update(keys)
+        
+    def create_dynamic_index_job(self):
+        """ Creates the dynamic index job for the Report manager """
+        self._report_manager.create_dynamic_index_job(context=self)
 
     @contract(returns=Promise)
     def _get_promise(self):
@@ -281,17 +285,26 @@ class CompmakeContext(Context):
             self._promise = self.comp(load_static_storage, self, job_id=self._promise_job_id)
         return self._promise
 
+    def jobid_minus_prefix(self, want):
+        prefix = self.get_comp_prefix()
+        if prefix is not None:
+            pref = prefix + '-'
+            if want.startswith(pref):
+                res = want[len(pref):]
+            else:
+                res = want
+        else:
+            res = want
+        return res
 
 def wrap_state(config_state, f, *args, **kwargs):
     """ Used internally by comp_config() """
-    print('restoring state')
     config_state.restore()
     return f(*args, **kwargs)
 
 def wrap_state_dynamic(context, config_state, f, *args, **kwargs):
     """ Used internally by comp_config_dynamic() """
     config_state.restore()
-    print('restoring state')
     return f(context, *args, **kwargs)
 
     

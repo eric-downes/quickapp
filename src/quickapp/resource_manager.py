@@ -1,9 +1,12 @@
 from collections import defaultdict
+import traceback
+
+from contracts import contract, describe_type
+
 from compmake import Promise
 from conf_tools.utils import check_is_in, indent
-from contracts import contract, describe_type
 from reprep.report_utils import StoreResults
-import traceback
+
 
 __all__ = ['ResourceManager']
 
@@ -25,7 +28,8 @@ class ResourceManager(object):
     def set_resource_provider(self, rtype, provider):
         """
             provider: any callable. It will be called with "context" as first 
-                argument, and with any remaining params.
+                argument, and with any remaining params. It needs to return
+                a Compmake Promise() object (i.e. the output of comp()). 
                 
         """
         self.providers[rtype].append(provider)
@@ -38,10 +42,13 @@ class ResourceManager(object):
         """ 
         self.make_prefix[rtype] = make_prefix
     
-
     @contract(rtype='str')
     def get_resource(self, rtype, **params):
-        # print('RM %s %s get_resource %s %s' % (id(self), self._context, rtype, params))
+        return self.get_resource_job(self._context, rtype, **params)
+
+    @contract(rtype='str')
+    def get_resource_job(self, context, rtype, **params):
+    # print('RM %s %s get_resource %s %s' % (id(self), self._context, rtype, params))
         key = dict(rtype=rtype, **params)
         already_done = key in self.allresources
         if already_done:
@@ -50,8 +57,10 @@ class ResourceManager(object):
         check_is_in('resource type', rtype, self.providers)
         
         prefix = self._make_prefix(rtype, **params)
-        c = self._context.child(name=rtype, add_job_prefix=prefix, add_outdir=rtype)
-
+#         print('adding job prefix %r' % prefix)
+        c = context.child(name=rtype, add_job_prefix=prefix, add_outdir=rtype)
+        c._job_prefix = prefix
+        # Add this point we should check if we already created the job
         ok = []
         errors = []
         for provider in self.providers[rtype]:
@@ -103,8 +112,9 @@ class ResourceManager(object):
     def set_resource(self, goal, rtype, **params):
         key = dict(rtype=rtype, **params)
         if not isinstance(goal, Promise):
-            msg = 'Warning, resource %s' % key
-            msg += ' has type %s' % describe_type(goal)
+            msg = 'Warning, resource did not return a Compmake Promise.'
+            msg += '\n  key: %s' % key
+            msg += '\n type: %s' % describe_type(goal)
             # logger.error(msg)
             raise ValueError(msg)
         

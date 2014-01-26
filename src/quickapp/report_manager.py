@@ -1,24 +1,29 @@
-from compmake import Promise
+import os
+from pprint import pformat
+import time
+
+from contracts import contract, describe_type, describe_value
+
+from compmake import Context, Promise
 from compmake.utils import duration_human
 from conf_tools.utils import friendly_path
-from contracts import contract, describe_type, describe_value
-from pprint import pformat
+import numpy as np
 from quickapp import logger
+from quickapp.rm.create_index_dynamic import (create_job_index_dynamic,
+    write_report_single)
 from reprep import Report
 from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
-import numpy as np
-import os
-import time
-from compmake.context import Context
+from compmake.jobs.actions import clean_target
+
 
 __all__ = ['ReportManager']
 
 
 class ReportManager(object):
-    # TODO: make it use a context
     
-    def __init__(self, outdir, index_filename=None):
+    def __init__(self, context, outdir, index_filename=None):
+        self.context = context
         self.outdir = outdir
         if index_filename is None:
             index_filename = os.path.join(self.outdir, 'report_index.html')
@@ -59,7 +64,7 @@ class ReportManager(object):
         return self.allreports[key]
     
     @contract(report_type='str')
-    def add(self, report, report_type, **kwargs):
+    def add(self, context, report, report_type, **kwargs):
         """
             Adds a report to the collection.
             
@@ -67,10 +72,11 @@ class ReportManager(object):
             :param report_type: A string that describes the "type" of the report
             :param kwargs:  str->str,int,float  parameters used for grouping
         """         
+        from quickapp.compmake_context import CompmakeContext
+        assert isinstance(context, CompmakeContext)
         if not isinstance(report_type, str):
             msg = 'Need a string for report_type, got %r.' % describe_value(report_type)
             raise ValueError(msg)
-        
 
         if not isinstance(report, Promise):
             msg = ('ReportManager is mean to be given Promise objects, '
@@ -103,72 +109,165 @@ class ReportManager(object):
         filename = os.path.join(dirname, basename) 
         self.allreports_filename[key] = filename + '.html'
         
+        if True:
+            # Add also a single report independent of a global index
+            filename_single = os.path.join(dirname, basename) + '_s.html'
+            filename_index_dyn = os.path.join(dirname, basename) + '_dyn.html'
+
+            report_nid = self.html_resources_prefix + report_type_sane
+            if key:
+                report_nid += '-' + basename_from_key(key)
+            write_job_id = context.jobid_minus_prefix(report.job_id + '-writes')
+
+            context.comp(write_report_single,
+                         report_job_id=report.job_id,
+                          report=report, report_nid=report_nid,
+                          report_html=filename_single,
+                          report_html_indexed=filename_index_dyn,
+                          write_pickle=False,
+                          key=key,
+                          job_id=write_job_id)
+
+
     @contract(context=Context)
     def create_index_job(self, context):
         if self.index_job_created:
             msg = 'create_index_job() was already called once'
             raise ValueError(msg)
         self.index_job_created = True
-        
-        
+
         if not self.allreports:
             # no reports necessary
             return
-        
-        
-        # Do not pass as argument, it will take lots of memory!
-        # XXX FIXME: there should be a way to make this update or not
-        # otherwise new reports do not appear
-        optimize_space = False
-        if optimize_space and len(self.allreports_filename) > 100:
-            allreports_filename = context.comp_store(self.allreports_filename, 'allfilenames')
-        else:
-            allreports_filename = self.allreports_filename
-        
-        type2reports = {}    
-        for report_type, xs in self.allreports_filename.groups_by_field_value('report'):
-            type2reports[report_type] = StoreResults(**xs.remove_field('report'))
-        
-            
-        for key in self.allreports: 
-            job_report = self.allreports[key]
-            filename = self.allreports_filename[key] 
 
-            write_job_id = job_report.job_id + '-write'
+        create_write_jobs(context=context,
+                          allreports_filename=self.allreports_filename,
+                          allreports=self.allreports,
+                          html_resources_prefix=self.html_resources_prefix,
+                          index_filename=self.index_filename,
+                          suffix='write')
+#
+#         # Do not pass as argument, it will take lots of memory!
+#         # XXX FIXME: there should be a way to make this update or not
+#         # otherwise new reports do not appear
+#         optimize_space = False
+#         if optimize_space and len(self.allreports_filename) > 100:
+#             allreports_filename = context.comp_store(self.allreports_filename, 'allfilenames')
+#         else:
+#             allreports_filename = self.allreports_filename
+#
+#         type2reports = sort_by_type(self.allreports_filename)
+#
+#         for key in self.allreports:
+#             job_report = self.allreports[key]
+#             filename = self.allreports_filename[key]
+#
+#             write_job_id = job_report.job_id + '-write'
+#
+#             # Create the links to reports of the same type
+#             report_type = key['report']
+#             other_reports_same_type = type2reports[report_type]
+#
+#             # find the closest report for different type
+#             others = find_others(type2reports, key)
+#
+#             report_type_sane = report_type.replace('_', '')
+#             report_nid = self.html_resources_prefix + report_type_sane
+#             if key:
+#                 report_nid += '-' + basename_from_key(key)
+#
+#             key = dict(**key)
+#             del key['report']
+#             context.comp(write_report_and_update,
+#                  report=job_report, report_nid=report_nid,
+#                 report_html=filename, all_reports=allreports_filename,
+#                 index_filename=self.index_filename,
+#                  write_pickle=False,
+#                  this_report=key,
+#                  other_reports_same_type=other_reports_same_type,
+#                  most_similar_other_type=others,
+#                  job_id=write_job_id)
             
-            # Create the links to reports of the same type
-            report_type = key['report']
-            other_reports_same_type = type2reports[report_type]
-            
-            key = dict(**key)
-            del key['report']
+    def create_dynamic_index_job(self, context):
+        index_filename = os.path.join(os.path.dirname(self.outdir),
+                                      'reports_dynamic.html')
+        context.comp_dynamic(create_job_index_dynamic,
+                             dirname=self.outdir,
+                             index_filename=index_filename,
+                             html_resources_prefix=self.html_resources_prefix)
 
-            # find the closest report for different type
-            others = []
-            for other_type, other_type_reports in type2reports.items():
-                if other_type == report_type:
-                    continue
-                best = get_most_similar(other_type_reports, key)
-                if best is not None:
+def create_write_jobs(context, allreports_filename, allreports,
+                      html_resources_prefix, index_filename, suffix):
+    # Do not pass as argument, it will take lots of memory!
+    # XXX FIXME: there should be a way to make this update or not
+    # otherwise new reports do not appear
+    optimize_space = False
+    if optimize_space and len(allreports_filename) > 100:
+        allreports_filename = context.comp_store(allreports_filename, 'allfilenames')
+    else:
+        allreports_filename = allreports_filename
+
+    type2reports = sort_by_type(allreports_filename)
+
+    for key in allreports:
+        job_report = allreports[key]
+        filename = allreports_filename[key]
+
+        write_job_id = context.jobid_minus_prefix(job_report.job_id + '-' + suffix)
+
+        # Create the links to reports of the same type
+        report_type = key['report']
+        other_reports_same_type = type2reports[report_type]
+
+        # find the closest report for different type
+        others = find_others(type2reports, key)
+
+        report_type_sane = report_type.replace('_', '')
+        report_nid = html_resources_prefix + report_type_sane
+        if key:
+            report_nid += '-' + basename_from_key(key)
+
+        key = dict(**key)
+        del key['report']
+        promise = context.comp(write_report_and_update,
+             report=job_report, report_nid=report_nid,
+             report_html=filename, all_reports=allreports_filename,
+             index_filename=index_filename,
+             write_pickle=False,
+             this_report=key,
+             other_reports_same_type=other_reports_same_type,
+             most_similar_other_type=others,
+             job_id=write_job_id)
+        # let's clean it --- in an ideal world compmake should detect that
+        # the arguments changed
+        db = context.get_compmake_db()
+        clean_target(promise.job_id, db=db)
+
+
+def sort_by_type(allreports_filename):
+    type2reports = {}
+    for report_type, xs in allreports_filename.groups_by_field_value('report'):
+        type2reports[report_type] = StoreResults(**xs.remove_field('report'))
+    return type2reports
+
+def find_others(type2reports, key):
+    """ find the closest report for different type """
+    report_type = key['report']
+
+    key = dict(**key)
+    del key['report']
+
+    others = []
+    for other_type, other_type_reports in type2reports.items():
+        if other_type == report_type:
+            continue
+        best = get_most_similar(other_type_reports, key)
+        if best is not None:
 #                     print('Best match:\n-%s %s\n- %s %s' % (report_type, key,
 #                                                             other_type, best))
-                    others.append((other_type, best, other_type_reports[best]))
-            
-            report_type_sane = report_type.replace('_', '')
-            report_nid = self.html_resources_prefix + report_type_sane
-            if key: 
-                report_nid += '-' + basename_from_key(key) 
-            
-            context.comp(write_report_and_update,
-                 report=job_report, report_nid=report_nid,
-                report_html=filename, all_reports=allreports_filename,
-                index_filename=self.index_filename,
-                 write_pickle=False,
-                 this_report=key,
-                 other_reports_same_type=other_reports_same_type,
-                 most_similar_other_type=others,
-                 job_id=write_job_id)
+            others.append((other_type, best, other_type_reports[best]))
 
+    return others
 
 def get_most_similar(reports_different_type, key):
     """ Returns the report of another type that is most similar to this report. """
@@ -200,8 +299,7 @@ def create_links_html(this_report, other_reports_same_type, index_filename,
     :returns: html string describing the link
     '''
     
-    def rel_link(f):
-        # TODO: make it relative
+    def rel_link(f):  # (this is FROM f0 to f) --- trust me, it's ok
         f0 = other_reports_same_type[this_report]
         rl = os.path.relpath(f, os.path.dirname(f0))
         return rl
@@ -281,8 +379,9 @@ def create_links_html_table(this_report, other_reports_same_type):
             col.append(res)
         cols.append((field, col))
     return cols
-    
-    
+
+
+
 @contract(report=Report, report_nid='str', other_reports_same_type=StoreResults)
 def write_report_and_update(report, report_nid, report_html, all_reports, index_filename,
                             this_report,
@@ -380,8 +479,8 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
     @contract(k=dict, filename=str)
     def write_li(k, filename, element='li'):
         desc = ",  ".join('%s = %s' % (a, b) for a, b in k.items())
-        href = os.path.relpath(filename, os.path.dirname(index))
-        
+        href = os.path.relpath(os.path.realpath(filename),
+                               os.path.dirname(os.path.realpath(index)))
         if os.path.exists(filename):
             when = duration_human(time.time() - mtime(filename))
             span_when = '<span class="when">%s ago</span>' % when

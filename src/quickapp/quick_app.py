@@ -4,10 +4,11 @@ import sys
 import traceback
 import warnings
 
-from compmake import read_rc_files, StorageFilesystem
-from conf_tools.utils import indent
 from contracts import ContractsMeta, contract
 import contracts
+
+from compmake import read_rc_files, StorageFilesystem
+from conf_tools.utils import indent
 from decent_params.utils import wrap_script_entry_point, UserError
 from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
 
