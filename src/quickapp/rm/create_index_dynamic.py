@@ -7,7 +7,8 @@ from compmake.structures import Promise
 from reprep import Report
 from reprep.report_utils import StoreResults
 
-from .configuration import get_rm_config, get_conftools_rm_reports
+from .configuration import get_conftools_rm_reports
+from compmake.jobs.storage import job_exists
 
 
 __all__ = ['create_job_index_dynamic', 'write_report_single']
@@ -45,12 +46,17 @@ def create_job_index_dynamic(context, dirname, index_filename, html_resources_pr
         print('Reports directory not found. You should rerun this job later.')
         return
 
-    config = get_rm_config()
-    config.load(dirname)
-
     reports = get_conftools_rm_reports()
-    id_reports = reports.expand_names('*')
-    print('Found reports: %s' % id_reports)
+
+    print(reports.dirs_read)
+    reports.force_load(dirname)
+
+    id_reports = list(reports.keys())
+    if not id_reports:
+        print('No reports found yet.')
+        return
+#     id_reports = reports.expand_names('*')
+#     print('Found reports: %s' % id_reports)
 
     allreports = StoreResults()
     allreports_filename = StoreResults()
@@ -60,7 +66,15 @@ def create_job_index_dynamic(context, dirname, index_filename, html_resources_pr
         key = report.key
         report_job_id = report.report_job_id
         allreports_filename[key] = filename
-        allreports[key] = Promise(report_job_id)
+        # make sure we have it...
+        db = context.get_compmake_db()
+        if job_exists(report_job_id, db=db):
+            allreports[key] = Promise(report_job_id)
+        else:
+            print('Warning: yaml found for job which is not there yet.')
+#             print('filename: %s' % )
+            print('     job: %s' % report_job_id)
+
 
     from quickapp.report_manager import create_write_jobs
     create_write_jobs(context,

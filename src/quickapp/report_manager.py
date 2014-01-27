@@ -5,6 +5,7 @@ import time
 from contracts import contract, describe_type, describe_value
 
 from compmake import Context, Promise
+from compmake.jobs.actions import clean_target
 from compmake.utils import duration_human
 from conf_tools.utils import friendly_path
 import numpy as np
@@ -14,7 +15,7 @@ from quickapp.rm.create_index_dynamic import (create_job_index_dynamic,
 from reprep import Report
 from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
-from compmake.jobs.actions import clean_target
+from compmake.jobs.storage import job_exists
 
 
 __all__ = ['ReportManager']
@@ -128,6 +129,7 @@ class ReportManager(object):
                           key=key,
                           job_id=write_job_id)
 
+        self._mark_remake_dynamic_index(context)
 
     @contract(context=Context)
     def create_index_job(self, context):
@@ -146,55 +148,27 @@ class ReportManager(object):
                           html_resources_prefix=self.html_resources_prefix,
                           index_filename=self.index_filename,
                           suffix='write')
-#
-#         # Do not pass as argument, it will take lots of memory!
-#         # XXX FIXME: there should be a way to make this update or not
-#         # otherwise new reports do not appear
-#         optimize_space = False
-#         if optimize_space and len(self.allreports_filename) > 100:
-#             allreports_filename = context.comp_store(self.allreports_filename, 'allfilenames')
-#         else:
-#             allreports_filename = self.allreports_filename
-#
-#         type2reports = sort_by_type(self.allreports_filename)
-#
-#         for key in self.allreports:
-#             job_report = self.allreports[key]
-#             filename = self.allreports_filename[key]
-#
-#             write_job_id = job_report.job_id + '-write'
-#
-#             # Create the links to reports of the same type
-#             report_type = key['report']
-#             other_reports_same_type = type2reports[report_type]
-#
-#             # find the closest report for different type
-#             others = find_others(type2reports, key)
-#
-#             report_type_sane = report_type.replace('_', '')
-#             report_nid = self.html_resources_prefix + report_type_sane
-#             if key:
-#                 report_nid += '-' + basename_from_key(key)
-#
-#             key = dict(**key)
-#             del key['report']
-#             context.comp(write_report_and_update,
-#                  report=job_report, report_nid=report_nid,
-#                 report_html=filename, all_reports=allreports_filename,
-#                 index_filename=self.index_filename,
-#                  write_pickle=False,
-#                  this_report=key,
-#                  other_reports_same_type=other_reports_same_type,
-#                  most_similar_other_type=others,
-#                  job_id=write_job_id)
-            
+
+    dynamic_index_job_id = 'create_dynamic_index_job'
     def create_dynamic_index_job(self, context):
+        job_id = ReportManager.dynamic_index_job_id
+        # XXX: make sure prefix is None
         index_filename = os.path.join(os.path.dirname(self.outdir),
                                       'reports_dynamic.html')
         context.comp_dynamic(create_job_index_dynamic,
                              dirname=self.outdir,
                              index_filename=index_filename,
-                             html_resources_prefix=self.html_resources_prefix)
+                             html_resources_prefix=self.html_resources_prefix,
+                             job_id=job_id)
+
+    def _mark_remake_dynamic_index(self, context):
+        job_id = ReportManager.dynamic_index_job_id
+        db = context.get_compmake_db()
+        if job_exists(job_id, db=db):
+            clean_target(job_id, db=db)
+
+
+
 
 def create_write_jobs(context, allreports_filename, allreports,
                       html_resources_prefix, index_filename, suffix):

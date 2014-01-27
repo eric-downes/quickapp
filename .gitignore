@@ -6,3 +6,5 @@ ciao
 quickapp_test1
 .compmake_history.txt
 quickapp_test2
+.coverage
+coverage_information

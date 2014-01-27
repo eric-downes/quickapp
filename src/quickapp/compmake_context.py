@@ -273,7 +273,12 @@ class CompmakeContext(Context):
         self.extra_report_keys.update(keys)
         
     def create_dynamic_index_job(self):
-        """ Creates the dynamic index job for the Report manager """
+        """ 
+            Creates the dynamic index job for the Report manager.
+            
+            This is necessary if your reports are created dynamically
+            (i.e. inside delayed comp_dynamic() jobs).
+        """
         self._report_manager.create_dynamic_index_job(context=self)
 
     @contract(returns=Promise)

@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+from shutil import rmtree
+from tempfile import mkdtemp
+
+from nose.tools import istest
+
 from quickapp import (QuickApp, QUICKAPP_USER_ERROR, QUICKAPP_COMPUTATION_ERROR,
     quickapp_main)
-from reprep import Report
-from unittest.case import TestCase
 from quickapp.tests.quickappbase import QuickappTest
-from nose.tools import istest
-from tempfile import mkdtemp
-from shutil import rmtree
+from reprep import Report
+
 
 def actual_computation(param1, param2):
     print('computing (%s %s)' % (param1, param2))
