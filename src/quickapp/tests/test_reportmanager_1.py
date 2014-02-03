@@ -50,7 +50,7 @@ class CompappTest1(QuickappTest):
         print('---- result of first make')
         self.assert_cmd_success('ls')
         print('---- now remake')
-        self.assert_cmd_success('remake create_job_index_dynamic')
+        self.assert_cmd_success('remake create_dynamic_index_job')
         print('---- result of remake')
         self.assert_cmd_success('ls')
         self.assert_cmd_success('make')
