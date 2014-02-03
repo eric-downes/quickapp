@@ -1,13 +1,17 @@
+from pprint import pformat
+import warnings
+
+from argparse import RawTextHelpFormatter
+import argparse
+from contracts import contract
+
+from decent_params import Choice
+
 from .decent_param import (DecentParamFlag, DecentParam, DecentParamMultiple,
     DecentParamChoice, DecentParamsResults)
 from .exceptions import (DecentParamsUnknownArgs, DecentParamsDefinitionError,
     DecentParamsUserError)
-from argparse import RawTextHelpFormatter
-from contracts import contract
-from decent_params import Choice
-from pprint import pformat
-import argparse
-import warnings
+
 
 __all__ = ['DecentParams']
 

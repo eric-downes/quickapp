@@ -1,8 +1,8 @@
 from nose.tools import istest
 
-from quickapp.app_utils.subcontexts import iterate_context_names
-from quickapp.quick_app import QuickApp
-from quickapp.tests.quickappbase import QuickappTest
+from quickapp import QuickApp, iterate_context_names
+
+from .quickappbase import QuickappTest
 
 
 def f(name):

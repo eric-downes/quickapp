@@ -1,10 +1,11 @@
-from compmake import Promise
+from copy import deepcopy
+
 from contracts import contract
+
+from compmake import Promise
 from quickapp import CompmakeContext
 from quickapp.report_manager import basename_from_key
-from reprep import Report, logger
-from reprep.structures import NotExistent
-from copy import deepcopy
+from reprep import NotExistent, Report, logger
 
 
 __all__ = ['ReportProxy', 'get_node']

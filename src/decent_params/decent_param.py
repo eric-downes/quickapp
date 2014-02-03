@@ -1,7 +1,8 @@
 from contracts import contract, describe_type, describe_value
-from decent_params import Choice
-from .exceptions import  DecentParamsSemanticError
 
+from decent_params import Choice
+
+from .exceptions import DecentParamsSemanticError
 
 
 not_given = 'DefaultNotGiven'
@@ -132,7 +133,7 @@ class DecentParamMultiple(DecentParam):
     @contract(s='str')
     def value_from_string(self, s):
         values = [DecentParam.value_from_string(self, x) for x in s.split(',')]
-#         return Choice(values)
+        #  return Choice(values)
         return values
 
     def validate(self, value):

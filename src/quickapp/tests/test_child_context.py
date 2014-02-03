@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 from nose.tools import istest
 
-from compmake.unittests.compmake_test import CompmakeTest
-from quickapp import QuickApp, quickapp_main
-from quickapp.app_utils import iterate_context_names
-from quickapp.compmake_context import CompmakeContext
-from quickapp.tests.quickappbase import QuickappTest
+from quickapp import (CompmakeContext, QuickApp, quickapp_main,
+    iterate_context_names)
+from .quickappbase import QuickappTest
 
 
 def f(name):
@@ -28,7 +26,7 @@ class QuickAppDemoChild(QuickApp):
             define_jobs(c, id_name)
 # XXX
 # @istest
-class CompappTestDynamic(CompmakeTest):
+class CompappTestDynamic(QuickappTest):
 
     def compapp_test1(self):
         args = '--contracts -o %s -c make' % self.root0

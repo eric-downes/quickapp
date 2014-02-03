@@ -1,8 +1,8 @@
-from decent_params import DecentParams, UserError
-from nose.tools import raises
 import unittest
-from decent_params.exceptions import DecentParamsUnknownArgs
 
+from nose.tools import raises
+
+from decent_params import DecentParams, UserError, DecentParamsUnknownArgs
 
 
 class ParamsTest(unittest.TestCase):

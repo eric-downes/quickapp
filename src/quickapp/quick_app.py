@@ -125,7 +125,7 @@ class QuickApp(QuickAppBase):
         
         context.finalize_jobs()
         # finally, save the context to the DB
-        context.compmake_db['context'] = context
+        # context.compmake_db['context'] = context
         
         if context.n_comp_invocations == 0:
             # self.comp was never called

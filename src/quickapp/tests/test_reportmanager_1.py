@@ -1,9 +1,9 @@
 from nose.tools import istest
 
-from quickapp import QuickApp
-from quickapp.app_utils.subcontexts import iterate_context_names
-from quickapp.tests.quickappbase import QuickappTest
+from quickapp import QuickApp, iterate_context_names
 from reprep import Report
+
+from .quickappbase import QuickappTest
 
 
 def report_example1(param1, param2):

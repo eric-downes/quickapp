@@ -6,8 +6,9 @@ from nose.tools import istest
 
 from quickapp import (QuickApp, QUICKAPP_USER_ERROR, QUICKAPP_COMPUTATION_ERROR,
     quickapp_main)
-from quickapp.tests.quickappbase import QuickappTest
 from reprep import Report
+
+from .quickappbase import QuickappTest
 
 
 def actual_computation(param1, param2):

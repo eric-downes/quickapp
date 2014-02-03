@@ -5,10 +5,10 @@ from pprint import pformat
 import sys
 import traceback
 
-from conf_tools.utils import indent
 from contracts import contract, describe_value, ContractsMeta
-from decent_params import DecentParams, UserError
-from decent_params.exceptions import DecentParamsUserError
+
+from conf_tools.utils import indent
+from decent_params import DecentParams, UserError, DecentParamsUserError
 from quickapp import logger
 
 from .exceptions import QuickAppException

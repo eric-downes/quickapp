@@ -5,17 +5,16 @@ import time
 from contracts import contract, describe_type, describe_value
 
 from compmake import Context, Promise
-from compmake.jobs.actions import clean_target
+from compmake.jobs import clean_target, job_exists, delete_all_job_data
 from compmake.utils import duration_human
 from conf_tools.utils import friendly_path
 import numpy as np
 from quickapp import logger
-from quickapp.rm.create_index_dynamic import (create_job_index_dynamic,
-    write_report_single)
 from reprep import Report
 from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
-from compmake.jobs.storage import job_exists
+
+from .rm import create_job_index_dynamic, write_report_single, write_report_yaml
 
 
 __all__ = ['ReportManager']
@@ -24,6 +23,7 @@ __all__ = ['ReportManager']
 class ReportManager(object):
     
     def __init__(self, context, outdir, index_filename=None):
+        # TODO: remove context
         self.context = context
         self.outdir = outdir
         if index_filename is None:
@@ -120,13 +120,17 @@ class ReportManager(object):
                 report_nid += '-' + basename_from_key(key)
             write_job_id = context.jobid_minus_prefix(report.job_id + '-writes')
 
+            write_report_yaml(report_nid, report_job_id=report.job_id,
+                              key=key, html_filename=filename_single,
+                              report_html_indexed=filename_index_dyn)
+                
             context.comp(write_report_single,
-                         report_job_id=report.job_id,
+#                          report_job_id=report.job_id,
                           report=report, report_nid=report_nid,
                           report_html=filename_single,
-                          report_html_indexed=filename_index_dyn,
+#                           report_html_indexed=filename_index_dyn,
                           write_pickle=False,
-                          key=key,
+#                           key=key,
                           job_id=write_job_id)
 
         self._mark_remake_dynamic_index(context)
@@ -203,6 +207,12 @@ def create_write_jobs(context, allreports_filename, allreports,
 
         key = dict(**key)
         del key['report']
+        
+        db = context.get_compmake_db()
+        if job_exists(write_job_id, db=db):
+            print('Re-defining job %s' % write_job_id)
+            delete_all_job_data(write_job_id, db=db)
+        
         promise = context.comp(write_report_and_update,
              report=job_report, report_nid=report_nid,
              report_html=filename, all_reports=allreports_filename,

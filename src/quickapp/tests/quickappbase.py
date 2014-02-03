@@ -1,6 +1,8 @@
 from contracts import contract
+
 from compmake.unittests.compmake_test import CompmakeTest
-from quickapp.quick_app import quickapp_main
+from quickapp import quickapp_main
+
 
 class QuickappTest(CompmakeTest):
     """ Utilities for quickapp testing """
