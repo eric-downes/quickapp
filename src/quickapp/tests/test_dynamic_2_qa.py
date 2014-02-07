@@ -1,6 +1,7 @@
 from nose.tools import istest
 
 from quickapp import QuickApp, iterate_context_names
+
 from .quickappbase import QuickappTest
 
 
