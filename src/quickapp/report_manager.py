@@ -40,6 +40,11 @@ class ReportManager(object):
         # check if we are called more than once; would be a bug
         self.index_job_created = False
         
+        self._dynamic_reports = False
+
+    def activate_dynamic_reports(self):
+        self._dynamic_reports = True
+
     def set_html_resources_prefix(self, prefix):
         """ 
             Sets the prefix for the resources filename.
@@ -110,7 +115,7 @@ class ReportManager(object):
         filename = os.path.join(dirname, basename) 
         self.allreports_filename[key] = filename + '.html'
         
-        if True:
+        if self._dynamic_reports:
             # Add also a single report independent of a global index
             filename_single = os.path.join(dirname, basename) + '_s.html'
             filename_index_dyn = os.path.join(dirname, basename) + '_dyn.html'
@@ -133,7 +138,7 @@ class ReportManager(object):
 #                           key=key,
                           job_id=write_job_id)
 
-        self._mark_remake_dynamic_index(context)
+            self._mark_remake_dynamic_index(context)
 
     @contract(context=Context)
     def create_index_job(self, context):

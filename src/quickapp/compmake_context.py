@@ -51,6 +51,9 @@ class CompmakeContext(Context):
         
         self._promise = None
 
+    def activate_dynamic_reports(self):
+        self._report_manager.activate_dynamic_reports()
+
     def finalize_jobs(self):
         """ After all jobs have been defined, we create index jobs. """
         if self.private_report_manager:
