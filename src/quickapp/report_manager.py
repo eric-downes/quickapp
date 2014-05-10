@@ -42,6 +42,8 @@ class ReportManager(object):
         
         self._dynamic_reports = False
 
+        self.static_dir = os.path.join(self.outdir, 'reprep-static')
+
     def activate_dynamic_reports(self):
         self._dynamic_reports = True
 
@@ -115,7 +117,12 @@ class ReportManager(object):
         filename = os.path.join(dirname, basename) 
         self.allreports_filename[key] = filename + '.html'
         
-        if self._dynamic_reports:
+        is_root = context.currently_executing == ['root']
+
+        if self._dynamic_reports and not is_root:
+            # don't create the single report for the ones that are
+            # defined in the root session
+
             # Add also a single report independent of a global index
             filename_single = os.path.join(dirname, basename) + '_s.html'
             filename_index_dyn = os.path.join(dirname, basename) + '_dyn.html'
@@ -135,6 +142,7 @@ class ReportManager(object):
                           report_html=filename_single,
 #                           report_html_indexed=filename_index_dyn,
                           write_pickle=False,
+                          static_dir=self.static_dir,
 #                           key=key,
                           job_id=write_job_id)
 
@@ -151,11 +159,13 @@ class ReportManager(object):
             # no reports necessary
             return
 
+
         create_write_jobs(context=context,
                           allreports_filename=self.allreports_filename,
                           allreports=self.allreports,
                           html_resources_prefix=self.html_resources_prefix,
                           index_filename=self.index_filename,
+                          static_dir=self.static_dir,
                           suffix='write')
 
     dynamic_index_job_id = 'create_dynamic_index_job'
@@ -180,7 +190,8 @@ class ReportManager(object):
 
 
 def create_write_jobs(context, allreports_filename, allreports,
-                      html_resources_prefix, index_filename, suffix):
+                      html_resources_prefix, index_filename, suffix,
+                      static_dir):
     # Do not pass as argument, it will take lots of memory!
     # XXX FIXME: there should be a way to make this update or not
     # otherwise new reports do not appear
@@ -224,6 +235,7 @@ def create_write_jobs(context, allreports_filename, allreports,
              index_filename=index_filename,
              write_pickle=False,
              this_report=key,
+             static_dir=static_dir,
              other_reports_same_type=other_reports_same_type,
              most_similar_other_type=others,
              job_id=write_job_id)
@@ -376,6 +388,7 @@ def write_report_and_update(report, report_nid, report_html, all_reports, index_
                             this_report,
                             other_reports_same_type,
                             most_similar_other_type,
+                            static_dir,
                             write_pickle=False):
     
     if not isinstance(report, Report):
@@ -391,13 +404,16 @@ def write_report_and_update(report, report_nid, report_html, all_reports, index_
                   extra_html_body_end=tree_html)
 
     report.nid = report_nid
-    html = write_report(report, report_html, write_pickle=write_pickle, **extras)
+    html = write_report(report=report,
+                        report_html=report_html,
+                        static_dir=static_dir,
+                        write_pickle=write_pickle, **extras)
     index_reports(reports=all_reports, index=index_filename, update=html)
 
 
 
 @contract(report=Report, report_html='str')
-def write_report(report, report_html, write_pickle=False, **kwargs): 
+def write_report(report, report_html, static_dir, write_pickle=False, **kwargs):
     
     logger.debug('Writing to %r.' % friendly_path(report_html))
 #     if False:
@@ -406,7 +422,11 @@ def write_report(report, report_html, write_pickle=False, **kwargs):
 #     else:
     rd = os.path.splitext(report_html)[0]
     report.to_html(report_html,
-                   write_pickle=write_pickle, resources_dir=rd, **kwargs)
+                   write_pickle=write_pickle,
+                   resources_dir=rd,
+                   static_dir=static_dir,
+                   **kwargs)
+
     # TODO: save hdf format
     return report_html
 

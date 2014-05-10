@@ -24,6 +24,7 @@ def write_report_single(report,
                         # report_job_id,
                         report_nid, report_html,
                                 # report_html_indexed, key,
+                                static_dir,
                                 write_pickle=False):
     from quickapp.report_manager import write_report
 
@@ -31,7 +32,7 @@ def write_report_single(report,
         msg = 'Expected Report, got %s.' % describe_type(report)
         raise ValueError(msg)
     report.nid = report_nid
-    write_report(report, report_html, write_pickle=write_pickle)
+    write_report(report, report_html, static_dir=static_dir, write_pickle=write_pickle)
 
 
 def write_report_yaml(report_nid, report_job_id, key, html_filename, report_html_indexed):
