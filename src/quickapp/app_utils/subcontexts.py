@@ -11,18 +11,22 @@ __all__ = [
 ]
 
 
-def iterate_context_names(context, it1):
+def iterate_context_names(context, it1, key=None):
     """ Creates child contexts with minimal names. """
     # make strings
     if len(it1) == 0:
         raise ValueError('Empty iterator: %s' % it1)
-    names = map(str, it1)
+    values = list(it1)
+    names = map(str, values)
     # get nonambiguous and minimal at _,- boundaries
     _, names, _ = minimal_names_at_boundaries(names)
     # remove '-' and '_'
     names = map(good_context_name, names)
     for x, name in zip(it1, names):
         e_c = context.child(name)
+        if key is not None:
+            keys = {key: x}
+            e_c.add_extra_report_keys(**keys)
         yield e_c, x
 
     
