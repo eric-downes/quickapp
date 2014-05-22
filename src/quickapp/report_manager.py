@@ -15,6 +15,7 @@ from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
 
 from .rm import create_job_index_dynamic, write_report_single, write_report_yaml
+import warnings
 
 
 __all__ = ['ReportManager']
@@ -224,10 +225,11 @@ def create_write_jobs(context, allreports_filename, allreports,
         key = dict(**key)
         del key['report']
         
-        db = context.get_compmake_db()
-        if job_exists(write_job_id, db=db):
-            print('Re-defining job %s' % write_job_id)
-            delete_all_job_data(write_job_id, db=db)
+        warnings.warn('not sure why this was here in the first place')
+#         db = context.get_compmake_db()
+#         if job_exists(write_job_id, db=db):
+#             # print('Re-defining job %s' % write_job_id)
+#             delete_all_job_data(write_job_id, db=db)
         
         promise = context.comp(write_report_and_update,
              report=job_report, report_nid=report_nid,
@@ -239,10 +241,12 @@ def create_write_jobs(context, allreports_filename, allreports,
              other_reports_same_type=other_reports_same_type,
              most_similar_other_type=others,
              job_id=write_job_id)
+
+
         # let's clean it --- in an ideal world compmake should detect that
         # the arguments changed
-        db = context.get_compmake_db()
-        clean_target(promise.job_id, db=db)
+#         db = context.get_compmake_db()
+#         clean_target(promise.job_id, db=db)
 
 
 def sort_by_type(allreports_filename):
