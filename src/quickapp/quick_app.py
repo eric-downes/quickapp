@@ -73,7 +73,12 @@ class QuickApp(QuickAppBase):
             parent = parent.parent
         return None
         
-    def go(self):  
+    def activate_dynamic_reports(self):
+        self.context.activate_dynamic_reports()
+        self._dynamic_reports = True
+
+    def go(self):
+        self._dynamic_reports = False
          
         # check that if we have a parent who is a quickapp,
         # then use its context      
@@ -123,6 +128,9 @@ class QuickApp(QuickAppBase):
         self.define_jobs_context(context)
         self.context.comp_prefix(original)
         
+        if self._dynamic_reports:
+            context.create_dynamic_index_job()
+
         context.finalize_jobs()
         # finally, save the context to the DB
         # context.compmake_db['context'] = context

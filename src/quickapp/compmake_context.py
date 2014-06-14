@@ -51,6 +51,9 @@ class CompmakeContext(Context):
         
         self._promise = None
 
+    def activate_dynamic_reports(self):
+        self._report_manager.activate_dynamic_reports()
+
     def finalize_jobs(self):
         """ After all jobs have been defined, we create index jobs. """
         if self.private_report_manager:
@@ -286,6 +289,8 @@ class CompmakeContext(Context):
         """ Returns the promise object representing this context. """
         if self._promise is None:
             warnings.warn('Need IDs for contexts, using job_prefix.')
+            warnings.warn('XXX: Note that this sometimes creates a context '
+                          'with depth 1; then "delete not root" deletes it.')
             self._promise_job_id = 'context'  # -%s' % self._job_prefix
             self._promise = self.comp(load_static_storage, self, job_id=self._promise_job_id)
         return self._promise
