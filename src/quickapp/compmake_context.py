@@ -33,8 +33,8 @@ class CompmakeContext(Context):
         
         if report_manager is None:
             self.private_report_manager = True  # only create indexe if this is true
-            reports = os.path.join(output_dir, 'reports')
-            reports_index = os.path.join(output_dir, 'reports.html')
+            reports = os.path.join(output_dir, 'report')
+            reports_index = os.path.join(output_dir, 'report.html')
             report_manager = ReportManager(self, reports, reports_index)
         else:
             self.private_report_manager = False
@@ -185,7 +185,7 @@ class CompmakeContext(Context):
         if separate_report_manager:
             if add_outdir == '':
                 msg = ('Asked for separate report manager, but without changing output dir. '
-                       'This will make the reports overwrite each other.')
+                       'This will make the report overwrite each other.')
                 raise ValueError(msg)
                 
             report_manager = None
@@ -276,7 +276,7 @@ class CompmakeContext(Context):
         """ 
             Creates the dynamic index job for the Report manager.
             
-            This is necessary if your reports are created dynamically
+            This is necessary if your report are created dynamically
             (i.e. inside delayed comp_dynamic() jobs).
         """
         self._report_manager.create_dynamic_index_job(context=self)

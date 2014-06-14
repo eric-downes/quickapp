@@ -7,7 +7,7 @@ class RMConfig(ConfigMaster):
     def __init__(self):
         ConfigMaster.__init__(self, 'rm')
         from .generated_report import GeneratedReport
-        self.reports = self.add_class_generic('reports',
+        self.reports = self.add_class_generic('report',
                                               '*.rm_reports.yaml',
                                               GeneratedReport)
 

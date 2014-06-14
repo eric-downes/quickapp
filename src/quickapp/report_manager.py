@@ -143,7 +143,7 @@ class ReportManager(object):
         self.index_job_created = True
 
         if not self.allreports:
-            # no reports necessary
+            # no report necessary
             return
 
         create_write_jobs(context=context,
@@ -178,7 +178,7 @@ def create_write_jobs(context, allreports_filename, allreports,
                       html_resources_prefix, index_filename, suffix):
     # Do not pass as argument, it will take lots of memory!
     # XXX FIXME: there should be a way to make this update or not
-    # otherwise new reports do not appear
+    # otherwise new report do not appear
     optimize_space = False
     if optimize_space and len(allreports_filename) > 100:
         allreports_filename = context.comp_store(allreports_filename, 'allfilenames')
@@ -193,7 +193,7 @@ def create_write_jobs(context, allreports_filename, allreports,
 
         write_job_id = context.jobid_minus_prefix(job_report.job_id + '-' + suffix)
 
-        # Create the links to reports of the same type
+        # Create the links to report of the same type
         report_type = key['report']
         other_reports_same_type = type2reports[report_type]
 
@@ -294,7 +294,7 @@ def create_links_html(this_report, other_reports_same_type, index_filename,
     # create table by cols
     table = create_links_html_table(this_report, other_reports_same_type)
     
-    s += "<p><a href='%s'>All reports</a></p>" % rel_link(index_filename)
+    s += "<p><a href='%s'>All report</a></p>" % rel_link(index_filename)
     
     s += "<table class='variations'>"
     s += "<thead><tr>"
@@ -323,7 +323,7 @@ def create_links_html(this_report, other_reports_same_type, index_filename,
 #                                                           other_type, most_similar) 
 #     s += '</dl>'
 
-    s += '<p>Other reports: '
+    s += '<p>Other report: '
     for other_type, _, filename in most_similar_other_type:
         s += '<a href="%s">%s</a> ' % (rel_link(filename), other_type) 
     s += '</p>'
@@ -410,10 +410,10 @@ def write_report(report, report_html, write_pickle=False, **kwargs):
 @contract(reports=StoreResults, index=str)
 def index_reports(reports, index, update=None):  # @UnusedVariable
     """
-        Writes an index for the reports to the file given. 
+        Writes an index for the report to the file given. 
         The special key "report" gives the report type.
         
-        reports[dict(report=...,param1=..., param2=...) ] => filename
+        report[dict(report=...,param1=..., param2=...) ] => filename
     """
     # print('Updating because of new report %s' % update)
     
@@ -483,7 +483,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
     existing.sort(key=lambda x: (-mtime(x[1])))
     nlast = min(len(existing), 10)
     last = existing[:nlast]
-    f.write('<h2 id="last">Last %d reports</h2>\n' % (nlast))
+    f.write('<h2 id="last">Last %d report</h2>\n' % (nlast))
 
     f.write('<ul>')
     for i in range(nlast):
@@ -502,7 +502,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
     
             f.write('</ul>')
     
-    f.write('<h2>All reports</h2>\n')
+    f.write('<h2>All report</h2>\n')
 
     try:
         sections = make_sections(reports)

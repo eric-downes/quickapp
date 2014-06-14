@@ -53,7 +53,7 @@ def write_report_yaml(report_nid, report_job_id, key, html_filename, report_html
 
 
 def create_job_index_dynamic(context, dirname, index_filename, html_resources_prefix):
-    """ Load the dynamically-generated reports """
+    """ Load the dynamically-generated report """
     if not os.path.exists(dirname):
         print('Reports directory not found. You should rerun this job later.')
         return
@@ -65,7 +65,7 @@ def create_job_index_dynamic(context, dirname, index_filename, html_resources_pr
 
     id_reports = list(reports.keys())
     if not id_reports:
-        print('No reports found yet.')
+        print('No report found yet.')
         return
 
     allreports = StoreResults()
