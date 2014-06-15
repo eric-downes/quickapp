@@ -53,7 +53,7 @@ def write_report_yaml(report_nid, report_job_id, key, html_filename, report_html
         f.write(yaml.dump([entry], default_flow_style=False))
 
 
-def create_job_index_dynamic(context, dirname, index_filename, html_resources_prefix):
+def create_job_index_dynamic(context, dirname, index_filename, html_resources_prefix, static_dir):
     """ Load the dynamically-generated report """
     if not os.path.exists(dirname):
         print('Reports directory not found. You should rerun this job later.')
@@ -90,6 +90,5 @@ def create_job_index_dynamic(context, dirname, index_filename, html_resources_pr
                       allreports,
                       html_resources_prefix,
                       index_filename,
-                      suffix='writedyn')
-
-
+                      suffix='writedyn',
+                      static_dir=static_dir)

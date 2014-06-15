@@ -1,11 +1,12 @@
 import os
 from pprint import pformat
 import time
+import warnings
 
 from contracts import contract, describe_type, describe_value
 
 from compmake import Context, Promise
-from compmake.jobs import clean_target, job_exists, delete_all_job_data
+from compmake.jobs import clean_target, job_exists
 from compmake.utils import duration_human
 from conf_tools.utils import friendly_path
 import numpy as np
@@ -15,7 +16,6 @@ from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
 
 from .rm import create_job_index_dynamic, write_report_single, write_report_yaml
-import warnings
 
 
 __all__ = ['ReportManager']
@@ -179,7 +179,8 @@ class ReportManager(object):
                              dirname=self.outdir,
                              index_filename=index_filename,
                              html_resources_prefix=self.html_resources_prefix,
-                             job_id=job_id)
+                             job_id=job_id,
+                             static_dir=self.static_dir)
 
     def _mark_remake_dynamic_index(self, context):
         job_id = ReportManager.dynamic_index_job_id
