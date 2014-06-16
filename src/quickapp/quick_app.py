@@ -116,7 +116,6 @@ class QuickApp(QuickAppBase):
         # Compmake storage for results        
         storage = os.path.join(output_dir, 'compmake')
         db = StorageFilesystem(storage, compress=True)
-        print('quickapp using db %s' % storage)
         currently_executing = ['root']
         context = CompmakeContext(db=db, currently_executing=currently_executing,
                                   parent=None, qapp=self, job_prefix=None,
