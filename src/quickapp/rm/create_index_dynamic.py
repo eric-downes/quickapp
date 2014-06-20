@@ -48,7 +48,10 @@ def write_report_yaml(report_nid, report_job_id, key, html_filename, report_html
                         'report_job_id': report_job_id}])
     dirname = os.path.dirname(metadata_file)
     if not os.path.exists(dirname):
-        os.makedirs(dirname)
+        try:
+            os.makedirs(dirname)
+        except:
+            pass  # XXX: race condition
     with open(metadata_file, 'w') as f:
         f.write(yaml.dump([entry], default_flow_style=False))
 

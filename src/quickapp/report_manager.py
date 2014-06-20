@@ -183,11 +183,15 @@ class ReportManager(object):
                              static_dir=self.static_dir)
 
     def _mark_remake_dynamic_index(self, context):
-        job_id = ReportManager.dynamic_index_job_id
-        db = context.get_compmake_db()
-        if job_exists(job_id, db=db):
-            clean_target(job_id, db=db)
-
+        try:
+            job_id = ReportManager.dynamic_index_job_id
+            db = context.get_compmake_db()
+            if job_exists(job_id, db=db):
+                clean_target(job_id, db=db)
+        except:
+            # we'll think it is a race condition
+            # XXX: need to change this mechanism
+            pass
 
 
 
