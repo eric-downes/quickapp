@@ -34,7 +34,6 @@ class ResourceManager(object):
         """
         self.providers[rtype].append(provider)
         
-        
     def set_resource_prefix_function(self, rtype, make_prefix):
         """
             make_prefix: a function that takes (rtype, **params) and 
