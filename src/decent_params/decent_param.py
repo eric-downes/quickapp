@@ -82,11 +82,15 @@ class DecentParam(object):
                      nargs=nargs)
         other['type'] = self.ptype
         if self.short is not None:
-            option1 = '-%s' % self.short
-            parser.add_argument(option1, option, **other)
+            parser.add_argument(self._get_short_option(), option, **other)
         else:
             parser.add_argument(option, **other)
          
+    def _get_short_option(self):
+        short = self.short
+        short = short.replace('-', '')
+        option1 = '-%s' % short
+        return option1
 
 class DecentParamsResults():
     
@@ -146,14 +150,27 @@ class DecentParamMultiple(DecentParam):
 
     def populate(self, parser):
         option = '--%s' % self.name
-        parser.add_argument(option, nargs='+', type=self.ptype,
+
+        other = dict(nargs='+', type=self.ptype,
                             help=self.get_desc(), default=self.default)
+
+        if self.short is not None:
+            parser.add_argument(self._get_short_option(), option, **other)
+        else:
+            parser.add_argument(option, **other)
+
+
               
 class DecentParamFlag(DecentParam):
     def populate(self, parser, default=False):
         option = '--%s' % self.name
-        parser.add_argument(option, help=self.desc, default=default,
-                            action='store_true')
+        other = dict(help=self.desc, default=default, action='store_true')
+
+        if self.short is not None:
+            parser.add_argument(self._get_short_option(), option, **other)
+        else:
+            parser.add_argument(option, **other)
+
       
         
 class DecentParamChoice(DecentParam):

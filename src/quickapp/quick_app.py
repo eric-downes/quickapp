@@ -38,7 +38,6 @@ class QuickApp(QuickAppBase):
         """ Define options for the application. """
         pass
 
-
     # Implementation
              
     def _define_options_compmake(self, params):
@@ -58,7 +57,7 @@ class QuickApp(QuickAppBase):
 
         params.add_string('command', short='c',
                       help="Command to pass to compmake for batch mode",
-                      default='make', group=g)
+                      default='make recurse=1', group=g)
     
     def define_program_options(self, params):
         self._define_options_compmake(params)

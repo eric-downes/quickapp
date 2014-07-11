@@ -69,7 +69,11 @@ class QuickAppBase(HasLogger):
     def get_sys_main(cls):
         """ Returns a function to be used as main function for a script. """
         from quickapp import quickapp_main
-        return lambda: quickapp_main(cls, args=None, sys_exit=True)
+
+        def entry(args=None, sys_exit=True):
+            return quickapp_main(cls, args=args, sys_exit=sys_exit)
+
+        return entry
     
     @classmethod
     def get_program_description(cls):

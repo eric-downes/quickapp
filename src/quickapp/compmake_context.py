@@ -94,7 +94,12 @@ class CompmakeContext(Context):
         """
         self.count_comp_invocations()
         self.comp_prefix(self._job_prefix)
-        extra_dep = self._extra_dep + kwargs.get('extra_dep', [])
+
+        other_extra = kwargs.get('extra_dep', [])
+        if isinstance(other_extra, Promise):
+            other_extra = [other_extra]
+
+        extra_dep = self._extra_dep + other_extra
         kwargs['extra_dep'] = extra_dep
         promise = Context.comp(self, f, *args, **kwargs)
         self._jobs[promise.job_id] = promise
