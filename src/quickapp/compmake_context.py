@@ -51,9 +51,6 @@ class CompmakeContext(Context):
         
         self._promise = None
 
-    def activate_dynamic_reports(self):
-        self._report_manager.activate_dynamic_reports()
-
     def finalize_jobs(self):
         """ After all jobs have been defined, we create index jobs. """
         if self.private_report_manager:
@@ -263,6 +260,10 @@ class CompmakeContext(Context):
         return rm.get_resource_job(self, rtype, **params)
     
     # Reports    
+
+    def activate_dynamic_reports(self):
+        self._report_manager.activate_dynamic_reports()
+
     @contract(report=Promise, report_type='str')
     def add_report(self, report, report_type, **params):
         rm = self.get_report_manager()

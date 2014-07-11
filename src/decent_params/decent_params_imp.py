@@ -1,8 +1,8 @@
+from argparse import RawTextHelpFormatter
+import argparse
 from pprint import pformat
 import warnings
 
-from argparse import RawTextHelpFormatter
-import argparse
 from contracts import contract
 
 from decent_params import Choice
