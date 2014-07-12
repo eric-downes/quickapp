@@ -1,15 +1,15 @@
-import os
-from types import NoneType
-import warnings
-
-from contracts import contract, describe_type
-
+from .report_manager import ReportManager
+from .resource_manager import ResourceManager
 from compmake import Context, Promise
 from compmake.context import load_static_storage
 from conf_tools import GlobalConfig
+from contracts import contract, describe_type
+from types import NoneType
+import os
+import warnings
 
-from .report_manager import ReportManager
-from .resource_manager import ResourceManager
+
+
 
 
 __all__ = ['CompmakeContext']

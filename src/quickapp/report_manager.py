@@ -349,11 +349,12 @@ def create_links_html(this_report, other_reports_same_type, index_filename,
 #                                                           other_type, most_similar) 
 #     s += '</dl>'
 
-    s += '<p>Other report: '
-    for other_type, _, filename in most_similar_other_type:
-        s += '<a href="%s">%s</a> ' % (rel_link(filename), other_type) 
-    s += '</p>'
-    
+    if most_similar_other_type:
+        s += '<p>Other report: '
+        for other_type, _, filename in most_similar_other_type:
+            s += '<a href="%s">%s</a> ' % (rel_link(filename), other_type) 
+        s += '</p>'
+        
     s = '<div style="margin-left: 1em;">' + s + '</div>'
     return s
 
