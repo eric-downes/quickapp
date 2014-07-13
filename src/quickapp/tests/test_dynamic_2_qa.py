@@ -43,6 +43,8 @@ class TestDynamic2(QuickappTest):
                                      'b-context',
                                      'a-define_jobs1',
                                      'b-define_jobs1',
+                                     'a-context-0',
+                                     'b-context-0',
                                      'a-define_jobs2',
                                      'b-define_jobs2',
                                      ])
@@ -51,6 +53,8 @@ class TestDynamic2(QuickappTest):
                                      'b-context',
                                      'a-define_jobs1',
                                      'b-define_jobs1',
+                                     'a-context-0',
+                                     'b-context-0',
                                      'a-define_jobs2',
                                      'b-define_jobs2',
                                      'a-f',
