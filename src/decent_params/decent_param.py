@@ -126,7 +126,6 @@ class DecentParamsResults():
 class DecentParamMultiple(DecentParam):
     """ Allow multiple values """    
     
-    
     def __init__(self, ptype, name, default=not_given, **args):
         if default is not not_given:
             if not isinstance(default, list):
@@ -137,7 +136,6 @@ class DecentParamMultiple(DecentParam):
     @contract(s='str')
     def value_from_string(self, s):
         values = [DecentParam.value_from_string(self, x) for x in s.split(',')]
-        #  return Choice(values)
         return values
 
     def validate(self, value):
@@ -147,7 +145,6 @@ class DecentParamMultiple(DecentParam):
         for x in value:
             self.check_type(x)
     
-
     def populate(self, parser):
         option = '--%s' % self.name
 
