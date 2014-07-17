@@ -10,8 +10,6 @@ import warnings
 
 
 
-
-
 __all__ = ['CompmakeContext']
 
 
@@ -107,7 +105,6 @@ class CompmakeContext(Context):
         """ 
             Like comp, but we also automatically save the GlobalConfig state.
         """
-        warnings.warn('TODO: make the config an object using comp_store().')
         config_state = GlobalConfig.get_state()
         # so that compmake can use a good name
         kwargs['command_name'] = f.__name__
@@ -125,7 +122,6 @@ class CompmakeContext(Context):
         config_state = GlobalConfig.get_state()
         # so that compmake can use a good name
         kwargs['command_name'] = f.__name__
-        warnings.warn('TODO: make the config an object using comp_store().')
         return self.comp_dynamic(wrap_state_dynamic, config_state, f, *args, **kwargs)
 
     def count_comp_invocations(self):
