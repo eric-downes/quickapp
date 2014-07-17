@@ -13,7 +13,7 @@ long_description = read('README.rst')
 
 setup(name='QuickApp',
       author="Andrea Censi",
-      author_email="andrea@cds.caltech.edu",
+      author_email="censi@mit.edu",
       url='http://github.com/AndreaCensi/quickapp',
       
       description=description,
