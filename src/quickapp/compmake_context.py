@@ -48,12 +48,10 @@ class CompmakeContext(Context):
         self.extra_report_keys = extra_report_keys
         
         self._promise = None
-
-    def finalize_jobs(self):
-        """ After all jobs have been defined, we create index jobs. """
-        if self.private_report_manager:
-            self.get_report_manager().create_index_job(self)
         
+
+        self.branched_contexts = []
+ 
     def __str__(self):
         return 'CC(%s, %s)' % (type(self._qapp).__name__, self._job_prefix)
     
@@ -110,10 +108,6 @@ class CompmakeContext(Context):
         kwargs['command_name'] = f.__name__
         return self.comp(wrap_state, config_state, f, *args, **kwargs)
 
-    @contract(returns=Promise)
-    def comp_dynamic(self, f, *args, **kwargs):
-        context = self._get_promise()
-        return self.comp(f, context, *args, **kwargs)
 
     @contract(returns=Promise)
     def comp_config_dynamic(self, f, *args, **kwargs):
@@ -254,12 +248,7 @@ class CompmakeContext(Context):
     def get_resource(self, rtype, **params):
         rm = self.get_resource_manager()
         return rm.get_resource_job(self, rtype, **params)
-    
-    # Reports    
-
-    def activate_dynamic_reports(self):
-        self._report_manager.activate_dynamic_reports()
-
+     
     @contract(report=Promise, report_type='str')
     def add_report(self, report, report_type, **params):
         rm = self.get_report_manager()
@@ -277,16 +266,7 @@ class CompmakeContext(Context):
     
     def add_extra_report_keys(self, **keys):
         warnings.warn('check conflict')
-        self.extra_report_keys.update(keys)
-        
-    def create_dynamic_index_job(self):
-        """ 
-            Creates the dynamic index job for the Report manager.
-            
-            This is necessary if your report are created dynamically
-            (i.e. inside delayed comp_dynamic() jobs).
-        """
-        self._report_manager.create_dynamic_index_job(context=self)
+        self.extra_report_keys.update(keys) 
 
     @contract(returns=Promise)
     def _get_promise(self):
@@ -299,18 +279,11 @@ class CompmakeContext(Context):
             self._promise = self.comp(load_static_storage, self, job_id=self._promise_job_id)
         return self._promise
 
-    def jobid_minus_prefix(self, want):
-        prefix = self.get_comp_prefix()
-        if prefix is not None:
-            pref = prefix + '-'
-            if want.startswith(pref):
-                res = want[len(pref):]
-            else:
-                res = want
-        else:
-            res = want
-        return res
-
+    
+    @contract(returns=Promise)
+    def comp_dynamic(self, f, *args, **kwargs):
+        return context_comp_dynamic(self, f, *args, **kwargs)
+       
 def wrap_state(config_state, f, *args, **kwargs):
     """ Used internally by comp_config() """
     config_state.restore()
@@ -321,6 +294,55 @@ def wrap_state_dynamic(context, config_state, f, *args, **kwargs):
     config_state.restore()
     return f(context, *args, **kwargs)
 
-    
 def checkpoint(name, prev_jobs):
     pass
+
+@contract(returns=Promise)
+def context_comp_dynamic(self, f, *args, **kwargs):
+    context = self._get_promise()
+    both = self.comp(_dynreports_wrap_dynamic, context, 
+                     function=f, args=args, kw=kwargs,
+                     command_name=f.__name__)
+    result = self.comp(_dynreports_getres, both)
+    data = self.comp(_dynreports_getbra, both)
+    self.branched_contexts.append(data)
+    return result
+    
+@contract(context=Context, returns='dict')
+def _dynreports_wrap_dynamic(context, function, args, kw):
+    """
+
+    """
+    res = {}
+    res['f-result'] = function(context, *args, **kw)
+    res['context-res'] = context_get_merge_data(context)
+    return res
+
+@contract(this_one=dict, branched='list(dict)')
+def _dynreports_merge(this_one, branched):
+    rm = this_one['report_manager']
+    for b in branched:
+        rm.merge(b['report_manager'])
+    return dict(report_manager=rm)
+    
+@contract(res='dict')
+def _dynreports_getres(res):    
+    """ gets only the result """
+    return res['f-result']
+
+@contract(res='dict')
+def _dynreports_getbra(res):    
+    """ gets only the result """
+    return res['context-res']
+
+def context_get_merge_data(context): 
+    rm = context.get_report_manager()
+    data = dict(report_manager=rm)
+    if context.branched_contexts:
+        return context.comp(_dynreports_merge, data, context.branched_contexts)
+    else:
+        return data
+    
+
+
+
