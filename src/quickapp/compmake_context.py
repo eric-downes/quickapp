@@ -300,9 +300,24 @@ def checkpoint(name, prev_jobs):
 @contract(returns=Promise)
 def context_comp_dynamic(self, f, *args, **kwargs):
     context = self._get_promise()
+    
+    compmake_args = {}
+    compmake_args_name = ['job_id', 'extra_dep', 'command_name']
+    for n in compmake_args_name:
+        if n in kwargs:
+            compmake_args[n] = kwargs[n]
+            del kwargs[n]
+            
+    if not 'command_name' in compmake_args:
+        compmake_args['command_name'] = f.__name__
+    #:arg:job_id:   sets the job id (respects job_prefix)
+    #:arg:extra_dep: extra dependencies (not passed as arguments)
+    #:arg:command_name: used to define job name if job_id not provided.
+    
+        
     both = self.comp(_dynreports_wrap_dynamic, context, 
                      function=f, args=args, kw=kwargs,
-                     command_name=f.__name__)
+                     **compmake_args)
     result = self.comp(_dynreports_getres, both)
     data = self.comp(_dynreports_getbra, both)
     self.branched_contexts.append(data)
