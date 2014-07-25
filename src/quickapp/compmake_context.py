@@ -51,6 +51,7 @@ class CompmakeContext(Context):
         
 
         self.branched_contexts = []
+        self.branched_children = []
  
     def __str__(self):
         return 'CC(%s, %s)' % (type(self._qapp).__name__, self._job_prefix)
@@ -210,6 +211,8 @@ class CompmakeContext(Context):
                            extra_report_keys=extra_report_keys_,
                            output_dir=output_dir,
                            extra_dep=_extra_dep)
+        warnings.warn('Actually we do not want to pickle children as well...')
+        self.branched_children.append(c1)
         return c1
 
     @contract(job_id=str)
@@ -284,6 +287,12 @@ class CompmakeContext(Context):
     def comp_dynamic(self, f, *args, **kwargs):
         return context_comp_dynamic(self, f, *args, **kwargs)
        
+    def has_branched(self):
+        """ Returns True if any comp_dynamic was issued. """
+        return len(self.branched_contexts)> 0 or any([c.has_branched()
+                                                      for c in self.branched_children])
+    
+       
 def wrap_state(config_state, f, *args, **kwargs):
     """ Used internally by comp_config() """
     config_state.restore()
@@ -333,11 +342,14 @@ def _dynreports_wrap_dynamic(context, function, args, kw):
     res['context-res'] = context_get_merge_data(context)
     return res
 
-@contract(this_one=dict, branched='list(dict)')
-def _dynreports_merge(this_one, branched):
-    rm = this_one['report_manager']
-    for b in branched:
-        rm.merge(b['report_manager'])
+@contract(branched='list(dict)')
+def _dynreports_merge(branched):
+    rm = None
+    for i, b in enumerate(branched):
+        if i == 0:
+            rm = b['report_manager']
+        else:
+            rm.merge(b['report_manager'])
     return dict(report_manager=rm)
     
 @contract(res='dict')
@@ -350,13 +362,24 @@ def _dynreports_getbra(res):
     """ gets only the result """
     return res['context-res']
 
+def get_branched_contexts(context):
+    """ Returns all promises created by context_comp_dynamic() for this and children. """
+    res = list(context.branched_contexts)
+    for c in context.branched_children:
+        res.extend(get_branched_contexts(c))
+    return res  
+        
 def context_get_merge_data(context): 
     rm = context.get_report_manager()
-    data = dict(report_manager=rm)
-    if context.branched_contexts:
-        return context.comp(_dynreports_merge, data, context.branched_contexts)
+    data = [dict(report_manager=rm)]
+    
+    data.extend(get_branched_contexts(context))
+    
+    
+    if len(data) > 1:    
+        return context.comp(_dynreports_merge, data)
     else:
-        return data
+        return data[0]
     
 
 

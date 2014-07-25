@@ -1,14 +1,13 @@
-from .compmake_context import CompmakeContext
+from .compmake_context import CompmakeContext, context_get_merge_data
 from .exceptions import QuickAppException
 from .quick_app_base import QuickAppBase
+from .report_manager import _dynreports_create_index
 from abc import abstractmethod
 from compmake import StorageFilesystem, read_rc_files
 from conf_tools.utils import indent
 from contracts import ContractsMeta, contract
 from decent_params.utils import UserError, wrap_script_entry_point
 from quickapp import QUICKAPP_COMPUTATION_ERROR, logger
-from quickapp.compmake_context import context_get_merge_data
-from quickapp.report_manager import _dynreports_create_index
 import contracts
 import os
 import sys
@@ -121,12 +120,17 @@ class QuickApp(QuickAppBase):
         
         merged  = context_get_merge_data(context)
     
-        # Only create the index job if we have reports or some branched
-        # context
-        if len(context
-               .get_report_manager().allreports) > 0 or len(context.branched_contexts)> 0:
-            from compmake.context import Context
+        # Only create the index job if we have reports defined
+        # or some branched context (which might create reports)
+        has_reports = len(context.get_report_manager().allreports) > 0
+        has_branched = context.has_branched()
+        if has_reports or has_branched:
+            self.info('Creating reports')
+            from compmake import Context
             Context.comp_dynamic(context, _dynreports_create_index, merged)
+        else:
+            self.info('Not creating reports.')
+        
         
         if context.n_comp_invocations == 0:
             # self.comp was never called
@@ -184,8 +188,7 @@ class QuickApp(QuickAppBase):
                 res = instance.go()  
             else:
                 instance.context = child_context
-                res = instance.define_jobs_context(child_context)
-                #child_context.finalize_jobs()
+                res = instance.define_jobs_context(child_context)                
                 
             # Add his jobs to our list of jobs
             context._jobs.update(child_context.all_jobs_dict()) 

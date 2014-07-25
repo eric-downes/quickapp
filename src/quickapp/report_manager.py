@@ -46,10 +46,16 @@ class ReportManager(object):
         #print('merging with another with %d reports' % len(other.allreports))
 
         for key in other.allreports:
+            report = other.allreports[key]
+            
             if key in self.allreports:
+                selfreport=  self.allreports[key]
                 msg = 'Found duplicate report %r' % key
-                raise ValueError(msg)
-            report= other.allreports[key]
+                msg = ' %s and %s' % (report, selfreport)
+                print(msg)
+                if report.job_id != selfreport.job_id:
+                    raise ValueError(msg)
+            
             filename = other.allreports_filename[key]
             self.allreports[key] = report
             self.allreports_filename[key] = filename
@@ -124,32 +130,34 @@ class ReportManager(object):
         filename = os.path.join(dirname, basename) 
         self.allreports_filename[key] = filename + '.html'
         
-        is_root = context.currently_executing == ['root']
+        write_singles = False
 
-        if not is_root:
-            # Add also a single report independent of a global index
-
-            # don't create the single report for the ones that are
-            # defined in the root session
-
-            filename_single = os.path.join(dirname, basename) + '_s.html'
-            filename_index_dyn = os.path.join(dirname, basename) + '_dyn.html'
-
-            report_nid = self.html_resources_prefix + report_type_sane
-            if key:
-                report_nid += '-' + basename_from_key(key)
-            write_job_id = jobid_minus_prefix(context, report.job_id + '-writes')
-
-            write_report_yaml(report_nid, report_job_id=report.job_id,
-                              key=key, html_filename=filename_single,
-                              report_html_indexed=filename_index_dyn)
-                
-            context.comp(write_report_single,
-                          report=report, report_nid=report_nid,
-                          report_html=filename_single,
-                          write_pickle=False,
-                          static_dir=self.static_dir,
-                          job_id=write_job_id) 
+        if write_singles:
+            is_root = context.currently_executing == ['root']
+            if not is_root:
+                # Add also a single report independent of a global index
+    
+                # don't create the single report for the ones that are
+                # defined in the root session
+    
+                filename_single = os.path.join(dirname, basename) + '_s.html'
+                filename_index_dyn = os.path.join(dirname, basename) + '_dyn.html'
+    
+                report_nid = self.html_resources_prefix + report_type_sane
+                if key:
+                    report_nid += '-' + basename_from_key(key)
+                write_job_id = jobid_minus_prefix(context, report.job_id + '-writes')
+    
+                write_report_yaml(report_nid, report_job_id=report.job_id,
+                                  key=key, html_filename=filename_single,
+                                  report_html_indexed=filename_index_dyn)
+                    
+                context.comp(write_report_single,
+                              report=report, report_nid=report_nid,
+                              report_html=filename_single,
+                              write_pickle=False,
+                              static_dir=self.static_dir,
+                              job_id=write_job_id) 
 
     @contract(context=Context)
     def create_index_job(self, context):
