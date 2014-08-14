@@ -1,0 +1,18 @@
+language: python
+
+python:
+  - 2.7
+  - 3.2
+  - 3.3
+  - 3.4
+  - pypy
+  
+install:
+  - pip install -r requirements.txt
+
+script:
+  - nosetests quickapp
+
+notifications:
+  email:
+   - censi@mit.edu
