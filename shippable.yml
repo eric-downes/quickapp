@@ -13,7 +13,3 @@ install:
 
 script:
   - nosetests quickapp
-
-notifications:
-  email:
-   - censi@mit.edu
