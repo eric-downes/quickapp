@@ -1,4 +1,3 @@
-        self.assert_cmd_success('make a-define_jobs1 b-define_jobs1')
 from quickapp import QuickApp, iterate_context_names
 from reprep import Report
  

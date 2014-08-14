@@ -4,6 +4,7 @@ from .quick_app_base import QuickAppBase
 from .report_manager import _dynreports_create_index
 from abc import abstractmethod
 from compmake import StorageFilesystem, read_rc_files
+from compmake.structures import CommandFailed
 from conf_tools.utils import indent
 from contracts import ContractsMeta, contract
 from decent_params.utils import UserError, wrap_script_entry_point
@@ -15,7 +16,10 @@ import traceback
 import warnings
 
 
-__all__ = ['QuickApp', 'quickapp_main']
+__all__ = [
+    'QuickApp', 
+    'quickapp_main',
+]
 
 
 class QuickApp(QuickAppBase):
@@ -138,17 +142,13 @@ class QuickApp(QuickAppBase):
             raise ValueError(msg)
         else: 
             if not options.console:
-                batch_result = self.context.batch_command(options.command)
-                if isinstance(batch_result, str):
+                try: 
+                    self.context.batch_command(options.command)
+                except CommandFailed:
                     ret = QUICKAPP_COMPUTATION_ERROR
-                elif isinstance(batch_result, int):
-                    if batch_result == 0:
-                        ret = 0
-                    else:
-                        # xxx: discarded information
-                        ret = QUICKAPP_COMPUTATION_ERROR
                 else:
-                    assert False 
+                    ret = 0
+                     
                 return ret
             else:
                 self.context.compmake_console()
