@@ -45,17 +45,5 @@ class QuickAppDemoReport(QuickApp):
 class CompappTest1(QuickappTest):
 
     def compapp_test1(self):
-        self.run_quickapp(QuickAppDemoReport, cmd='ls')
-#         print('---- now make')
-#         self.assert_cmd_success('make')
-#         print('---- result of first make')
-#         self.assert_cmd_success('ls')
-#         print('---- result of remake')
-#         self.assert_cmd_success('ls')
-#         self.assert_cmd_success('make')
-#         self.assert_cmd_success('ls')
-
+        self.run_quickapp(QuickAppDemoReport, cmd='ls') 
         self.assert_cmd_success('make recurse=1')
-
-#         self.assert_cmd_success('make')
-
