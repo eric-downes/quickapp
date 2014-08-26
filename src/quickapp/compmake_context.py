@@ -9,7 +9,6 @@ import os
 import warnings
 
 
-
 __all__ = ['CompmakeContext']
 
 
@@ -65,18 +64,21 @@ class CompmakeContext(Context):
     @contract(job_name='str', returns=Promise)
     def checkpoint(self, job_name):
         """ 
+        
+            (DEPRECATED)
+            
             Creates a dummy job called "job_name" that depends on all jobs
             previously defined; further, this new job is put into _extra_dep.
             This means that all successive jobs will require that the previous 
             ones be done.
-            
+             
             Returns the checkpoint job (CompmakePromise).
         """
         job_checkpoint = self.comp(checkpoint, job_name, prev_jobs=list(self._jobs.values()),
                                    job_id=job_name)
         self._extra_dep.append(job_checkpoint)
         return job_checkpoint
-    
+     
     #
     # Wrappers form Compmake's "comp".
     #
@@ -275,11 +277,12 @@ class CompmakeContext(Context):
     def _get_promise(self):
         """ Returns the promise object representing this context. """
         if self._promise is None:
-            warnings.warn('Need IDs for contexts, using job_prefix.')
-            warnings.warn('XXX: Note that this sometimes creates a context '
-                          'with depth 1; then "delete not root" deletes it.')
-            self._promise_job_id = 'context'  # -%s' % self._job_prefix
-            self._promise = self.comp(load_static_storage, self, job_id=self._promise_job_id)
+            #warnings.warn('Need IDs for contexts, using job_prefix.')
+            #warnings.warn('XXX: Note that this sometimes creates a context '
+            #              'with depth 1; then "delete not root" deletes it.')
+            self._promise_job_id = 'context'
+            self._promise = self.comp(load_static_storage, self, 
+                                      job_id=self._promise_job_id)
         return self._promise
 
     
@@ -289,8 +292,8 @@ class CompmakeContext(Context):
        
     def has_branched(self):
         """ Returns True if any comp_dynamic was issued. """
-        return len(self.branched_contexts)> 0 or any([c.has_branched()
-                                                      for c in self.branched_children])
+        return (len(self.branched_contexts)> 0 or 
+                any([c.has_branched() for c in self.branched_children]))
     
        
 def wrap_state(config_state, f, *args, **kwargs):
@@ -373,8 +376,7 @@ def context_get_merge_data(context):
     rm = context.get_report_manager()
     data = [dict(report_manager=rm)]
     
-    data.extend(get_branched_contexts(context))
-    
+    data.extend(get_branched_contexts(context))    
     
     if len(data) > 1:    
         return context.comp(_dynreports_merge, data)
