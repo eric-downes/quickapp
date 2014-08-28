@@ -6,10 +6,10 @@ from conf_tools import GlobalConfig
 from contracts import contract, describe_type
 from types import NoneType
 import os
-import warnings
 
-
-__all__ = ['CompmakeContext']
+__all__ = [
+    'CompmakeContext',
+]
 
 
 class CompmakeContext(Context):
@@ -180,8 +180,7 @@ class CompmakeContext(Context):
             output_dir = os.path.join(self._output_dir, name)
         else:
             output_dir = self._output_dir
-            
-        warnings.warn('add prefix to report manager')
+
         if separate_report_manager:
             if add_outdir == '':
                 msg = ('Asked for separate report manager, but without changing output dir. '
@@ -213,7 +212,6 @@ class CompmakeContext(Context):
                            extra_report_keys=extra_report_keys_,
                            output_dir=output_dir,
                            extra_dep=_extra_dep)
-        warnings.warn('Actually we do not want to pickle children as well...')
         self.branched_children.append(c1)
         return c1
 
@@ -270,7 +268,10 @@ class CompmakeContext(Context):
         return self._report_manager
     
     def add_extra_report_keys(self, **keys):
-        warnings.warn('check conflict')
+        for k in keys:
+            if k in self.extra_report_keys:
+                msg = 'key %r already in %s' % (k, list(self.extra_report_keys))
+                raise ValueError(msg) 
         self.extra_report_keys.update(keys) 
 
     @contract(returns=Promise)

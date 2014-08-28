@@ -32,11 +32,20 @@ def instance_reports2(context, param1):
         c2.comp_dynamic(instance_reports3, param1=param1, param2=param2)   
      
 def instance_reports3(context, param1, param2):
-    r = context.comp(report_example1, param1=param1, param2=param2)
-    context.add_report(r, 'report_example1')
+    context.comp(dummy)
+
     r = context.comp(report_example2, param1=param1, param2=param2)
     context.add_report(r, 'report_example2')
 
+    context.comp_dynamic(instance_reports4, param1=param1, param2=param2)
+    
+def instance_reports4(context, param1, param2):
+    r = context.comp(report_example1, param1=param1, param2=param2)
+    context.add_report(r, 'report_example1')
+    
+
+def dummy():
+    pass
 
 class QuickAppDemoReport2(QuickApp):
 
