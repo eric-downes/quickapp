@@ -12,6 +12,7 @@ __all__ = [
 ]
 
 
+
 class CompmakeContext(Context):
 
     @contract(extra_dep='list', currently_executing='list(str)')
@@ -21,7 +22,9 @@ class CompmakeContext(Context):
                  report_manager=None):
         Context.__init__(self, db=db, currently_executing=currently_executing)
         assert isinstance(parent, (CompmakeContext, NoneType))
+        # can be removed once subtask() is removed
         self._qapp = qapp
+        # only used for count invocation
         self._parent = parent
         self._job_prefix = job_prefix
         
@@ -53,7 +56,7 @@ class CompmakeContext(Context):
         self.branched_children = []
  
     def __str__(self):
-        return 'CC(%s, %s)' % (type(self._qapp).__name__, self._job_prefix)
+        return 'CompmakeContext(%s)' % ( self._job_prefix)
     
     def all_jobs(self):
         return list(self._jobs.values())
@@ -110,7 +113,6 @@ class CompmakeContext(Context):
         # so that compmake can use a good name
         kwargs['command_name'] = f.__name__
         return self.comp(wrap_state, config_state, f, *args, **kwargs)
-
 
     @contract(returns=Promise)
     def comp_config_dynamic(self, f, *args, **kwargs):
@@ -242,7 +244,6 @@ class CompmakeContext(Context):
         return self._resource_manager
     
     def needs(self, rtype, **params):
-        # print('%s %s %s %s %s' % (id(self), self._qapp, self._job_prefix, rtype, params))
         rm = self.get_resource_manager()
         res = rm.get_resource_job(self, rtype, **params)
         assert isinstance(res, Promise), describe_type(res)
@@ -327,23 +328,43 @@ def context_comp_dynamic(self, f, *args, **kwargs):
     #:arg:extra_dep: extra dependencies (not passed as arguments)
     #:arg:command_name: used to define job name if job_id not provided.
     
-        
-    both = self.comp(_dynreports_wrap_dynamic, context, 
-                     function=f, args=args, kw=kwargs,
-                     **compmake_args)
+    
+    if False:    
+        both = self.comp(_dynreports_wrap_dynamic, context, 
+                         function=f, args=args, kw=kwargs,
+                         **compmake_args)
+    else:
+        both = Context.comp_dynamic(self, _dynreports_wrap_dynamic, cc=context, 
+                         function=f, args=args, kw=kwargs,
+                         **compmake_args)
+    
     result = self.comp(_dynreports_getres, both)
     data = self.comp(_dynreports_getbra, both)
     self.branched_contexts.append(data)
     return result
     
 @contract(context=Context, returns='dict')
-def _dynreports_wrap_dynamic(context, function, args, kw):
+def _dynreports_wrap_dynamic(context, cc, function, args, kw):
     """
 
     """
+ 
+         
+    cc2 = CompmakeContext(currently_executing=context.currently_executing, 
+                          db=context.get_compmake_db(), 
+                          qapp=getattr(cc, '_qapp'), 
+                          parent=getattr(cc, '_parent'), 
+                          job_prefix=getattr(cc, '_job_prefix'),
+                          output_dir=getattr(cc, '_output_dir'), 
+                          extra_dep=getattr(cc, '_extra_dep'), 
+                          resource_manager=getattr(cc, '_resource_manager'),
+                          extra_report_keys=getattr(cc, 'extra_report_keys'),
+                          report_manager=getattr(cc, '_report_manager'))
+    
+    
     res = {}
-    res['f-result'] = function(context, *args, **kw)
-    res['context-res'] = context_get_merge_data(context)
+    res['f-result'] = function(cc2, *args, **kw)
+    res['context-res'] = context_get_merge_data(cc2)
     return res
 
 @contract(branched='list(dict)')

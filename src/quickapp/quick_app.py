@@ -3,18 +3,14 @@ from .exceptions import QuickAppException
 from .quick_app_base import QuickAppBase
 from .report_manager import _dynreports_create_index
 from abc import abstractmethod
-from compmake import StorageFilesystem, read_rc_files
-from compmake.structures import CommandFailed
-from conf_tools.utils import indent
-from contracts import ContractsMeta, contract
+from compmake import CommandFailed, StorageFilesystem, read_rc_files
+from contracts import ContractsMeta, contract, indent
 from decent_params.utils import UserError, wrap_script_entry_point
 from quickapp import QUICKAPP_COMPUTATION_ERROR, logger
 import contracts
 import os
 import sys
 import traceback
-import warnings
-
 
 __all__ = [
     'QuickApp', 
@@ -104,8 +100,6 @@ class QuickApp(QuickAppBase):
                 self.logger.warning(msg)
                 contracts.disable_all()
 
-        warnings.warn('removed configuration below')  # (start)
-
         output_dir = options.output
         
         # Compmake storage for results        
@@ -134,7 +128,6 @@ class QuickApp(QuickAppBase):
             Context.comp_dynamic(context, _dynreports_create_index, merged)
         else:
             self.info('Not creating reports.')
-        
         
         if context.n_comp_invocations == 0:
             # self.comp was never called
