@@ -10,11 +10,11 @@ import os
 
 __all__ = [
     'CompmakeContext',
+    'QuickAppContext',
 ]
 
-
-# TODO: rename QuickappContext
-class CompmakeContext():
+ 
+class QuickAppContext(object):
 
     @contract(extra_dep='list', cc=Context)
     def __init__(self, cc, qapp, parent, job_prefix,
@@ -389,6 +389,7 @@ def context_get_merge_data(context):
     else:
         return data[0]
     
+CompmakeContext = QuickAppContext
 
 
 
