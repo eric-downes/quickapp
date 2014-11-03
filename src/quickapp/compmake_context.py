@@ -78,7 +78,8 @@ class QuickAppContext(object):
              
             Returns the checkpoint job (CompmakePromise).
         """
-        job_checkpoint = self.comp(checkpoint, job_name, prev_jobs=list(self._jobs.values()),
+        job_checkpoint = self.comp(checkpoint, job_name, 
+                                   prev_jobs=list(self._jobs.values()),
                                    job_id=job_name)
         self._extra_dep.append(job_checkpoint)
         return job_checkpoint
@@ -109,7 +110,7 @@ class QuickAppContext(object):
     def comp_dynamic(self, f, *args, **kwargs):
         # XXX: we really dont need it
         context = self._get_promise()
-#         context = self
+        # context = self
         
         compmake_args = {}
         compmake_args_name = ['job_id', 'extra_dep', 'command_name']

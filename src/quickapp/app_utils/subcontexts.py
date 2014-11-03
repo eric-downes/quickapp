@@ -3,6 +3,9 @@ import os
 
 __all__ = [
    'iterate_context_names',
+   'iterate_context_pairs',
+   'iterate_context_triplets',
+   
    'iterate_context_names_pair',
    'iterate_context_names_triplet',
    'iterate_context_names_quartet',
@@ -124,15 +127,19 @@ def iterate_context_names_pair(context, it1, it2, key1=None, key2=None):
         for c, x2 in iterate_context_names(cc, it2, key=key2):
             yield c, x1, x2
 
+iterate_context_pairs = iterate_context_names_pair
 
-def iterate_context_names_triplet(context, it1, it2, it3):
+def iterate_context_names_triplet(context, it1, it2, it3,
+                                  key1=None, key2=None, key3=None):
     """
         Yields tuples of (context, s1, s2, s3).
     """
-    for c1, x1 in iterate_context_names(context, it1):
-        for c2, x2 in iterate_context_names(c1, it2):
-            for c3, x3 in iterate_context_names(c2, it3):
+    for c1, x1 in iterate_context_names(context, it1, key=key1):
+        for c2, x2 in iterate_context_names(c1, it2, key=key2):
+            for c3, x3 in iterate_context_names(c2, it3, key=key3):
                 yield c3, x1, x2, x3
+
+iterate_context_triplets = iterate_context_names_triplet
 
 
 def iterate_context_names_quartet(context, it1, it2, it3, it4):

@@ -10,6 +10,7 @@ from decent_params.utils import UserError, wrap_script_entry_point
 from quickapp import QUICKAPP_COMPUTATION_ERROR, logger
 import contracts
 import os
+import shutil
 import sys
 import traceback
 
@@ -51,6 +52,9 @@ class QuickApp(QuickAppBase):
         params.add_string('output', short='o',
                           help='Output directory',
                                     default=default_output_dir, group=g)
+    
+        params.add_flag('reset', 
+                        help='Deletes the output directory', group=g)
     
         params.add_flag('console', help='Use Compmake console', group=g)
 
@@ -94,14 +98,21 @@ class QuickApp(QuickAppBase):
 
         options = self.get_options()
         
+        
         if self.get_qapp_parent() is None:
             # only do this if somebody didn't do it before
             if not options.contracts:
-                msg = 'PyContracts disabled for speed. Use --contracts to activate.'
+                msg = ('PyContracts disabled for speed. '
+                       'Use --contracts to activate.')
                 self.logger.warning(msg)
                 contracts.disable_all()
 
         output_dir = options.output
+        
+        if options.reset:
+            if os.path.exists(output_dir):
+                self.logger.info('Removing output dir %r.' % output_dir)
+                shutil.rmtree(output_dir)
         
         # Compmake storage for results        
         storage = os.path.join(output_dir, 'compmake')

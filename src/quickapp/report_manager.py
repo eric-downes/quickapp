@@ -215,7 +215,7 @@ def create_write_jobs(context, allreports_filename, allreports,
         key = dict(**key)
         del key['report']
         
-        warnings.warn('not sure why this was here in the first place')
+        # XXX: not sure why this was here in the first place
 
         context.comp(write_report_and_update,
              report=job_report, report_nid=report_nid,
