@@ -612,7 +612,7 @@ def make_sections(allruns, common=None):
         c[field] = value
         try:
             division[value] = make_sections(samples, common=c)
-        except:
+        except Exception:
             msg = 'Error occurred inside grouping by field %r = %r' % (field, value)
             msg += '\nCommon: %r' % common
             msg += '\nSamples: %s' % list(samples.keys())
