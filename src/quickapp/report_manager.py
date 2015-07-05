@@ -11,7 +11,6 @@ from reprep.utils import frozendict2, natsorted
 import numpy as np
 import os
 import time
-import warnings
 
 
 __all__ = [
@@ -316,14 +315,60 @@ def create_links_html(this_report, other_reports_same_type, index_filename,
     s += "</tr></thead>"
 
     s += "<tr>"
+
+    add_invalid_links = True
+
     for field, variations in table:
         s += "<td>"
-        for text, link in variations:
-            if link is not None:
-                s += "<a href='%s'> %s</a> " % (link, text)
-            else:
-                s += "%s " % (text)
-            s += '<br/>'
+        
+        MAX_VARIATIONS_EXPLICIT = 10
+        
+        # hide the n/a
+        # variations = [v for v in variations if v[1] is not None]
+
+        all_vars = dict(variations)
+        sorted_variations = natsorted([v[0] for v in variations])
+        # print('sorted: %s' % sorted_variations)
+        variations = [(v, all_vars[v]) for v in sorted_variations]
+
+        if len(variations) > MAX_VARIATIONS_EXPLICIT:
+            id_select = 'select-%s' % (field)
+            onchange = 'onchange_%s' % (field)
+            s += "<select id='%s' onChange='%s()'>\n" % (id_select, onchange)
+
+            for text, link in variations:
+                if link is not None:
+                    s += "<option value='%s'>%s</a> \n" % (link, text)
+                else:
+                    if add_invalid_links:
+                        s += "<option value=''>%s</a> \n" % (text)
+                s += '<br/>'
+            
+            s += '</select>\n'
+
+            s += """         
+<script>
+    $(function(){
+      // bind change event to select
+      $('#%s').bind('change', function () {
+          var url = $(this).val(); // get selected value
+          if (url) { // require a URL
+              window.location = url; // redirect
+          }
+          return false;
+      });
+    });
+</script>
+""" % id_select
+
+        else:
+            for text, link in variations:
+                if link is not None:
+                    s += "<a href='%s'> %s</a> " % (link, text)
+                else:
+                    if add_invalid_links:
+                        s += "%s " % (text)
+                s += '<br/>\n'
             
         s += "</td>"
 
@@ -364,7 +409,8 @@ def create_links_html_table(this_report, other_reports_same_type):
         col = []
         for fv in field_values:
             if fv == this_report[field]:
-                res = ('<span style="font-weight:bold">%s</span>' % str(fv), None)
+                # res = ('<span style="font-weight:bold">%s</span>' % str(fv), None)
+                res = (str(fv), None)
             else:
                 # this is the variation obtained by changing only one field value
                 variation = dict(**this_report)

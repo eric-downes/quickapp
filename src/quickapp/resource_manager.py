@@ -11,7 +11,7 @@ from reprep.report_utils import StoreResults
 __all__ = ['ResourceManager']
 
 
-class ResourceManager(object):
+class ResourceManager():
 
     class CannotProvide(Exception):
         pass
@@ -100,7 +100,8 @@ class ResourceManager(object):
             return f(rtype, **params)
         
         keys = sorted(list(params.keys()))
-        from quickapp.app_utils.subcontexts import good_context_name
+
+        from quickapp.app_utils.minimal_name import good_context_name
         vals = [good_context_name(str(params[k])) for k in keys]
         rtype = rtype.replace('-', '_')
         alls = [rtype] + vals
