@@ -158,7 +158,25 @@ class QuickAppBase(HasLogger):
         # Create the parameters and set them using args
         self.parent = parent
         self.set_options_from_args(args)
-        ret = self.go()
+
+        profile = False
+        if not profile:
+            ret = self.go()
+        else:
+
+            import cProfile
+
+            out = 'cProfile.prof'
+            print('writing to %r' % out)
+            ret = cProfile.runctx('self.go()', globals(), locals(), out)
+            import pstats
+
+            p = pstats.Stats(out)
+            n = 30
+            p.sort_stats('cumulative').print_stats(n)
+            p.sort_stats('time').print_stats(n)
+
+
         if ret is None:
             ret = 0
         
