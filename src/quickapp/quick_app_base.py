@@ -159,14 +159,14 @@ class QuickAppBase(HasLogger):
         self.parent = parent
         self.set_options_from_args(args)
 
-        profile = False
+        profile = os.environ.get('QUICKAPP_PROFILE', False)
+
         if not profile:
             ret = self.go()
         else:
 
             import cProfile
-
-            out = 'cProfile.prof'
+            out = profile
             print('writing to %r' % out)
             ret = cProfile.runctx('self.go()', globals(), locals(), out)
             import pstats
