@@ -1,6 +1,10 @@
-from decent_params.utils import UserError
+from .utils import UserError
 
-__all__ = ['DecentParamsUserError', 'DecentParamsUknownArgs']
+__all__ = [
+   'DecentParamsUserError',
+   'DecentParamsUnknownArgs',
+   'DecentParamsSemanticError',
+]
 
 
 class DecentParamsDefinitionError(Exception):

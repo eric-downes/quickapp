@@ -1,16 +1,19 @@
 from abc import abstractmethod
-from conf_tools.utils import indent
-from contracts import contract, describe_value, ContractsMeta
-from decent_params import DecentParams, UserError
-from pprint import pformat
-from .utils import HasLogger
-from quickapp import logger
 import logging
 import os
+from pprint import pformat
 import sys
 import traceback
-from quickapp.exceptions import QuickAppException
-from decent_params.exceptions import DecentParamsUserError
+
+from contracts import contract, describe_value, ContractsMeta
+
+from conf_tools.utils import indent
+from decent_params import DecentParams, UserError, DecentParamsUserError
+from quickapp import logger
+
+from .exceptions import QuickAppException
+from .utils import HasLogger
+
 
 __all__ = ['QuickAppBase']
 
@@ -31,11 +34,23 @@ class QuickAppBase(HasLogger):
         HasLogger.__init__(self)
         self.parent = parent
         
+        self._init_logger()
+
+    def _init_logger(self):
         logger_name = self.get_prog_name()
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.DEBUG)
         self.logger = logger
     
+    def __getstate__(self):
+        d = dict(self.__dict__)
+        del d['logger']
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__.update(d)
+        self._init_logger()
+
     @abstractmethod
     def define_program_options(self, params):
         """ Must be implemented by the subclass. """
@@ -54,9 +69,17 @@ class QuickAppBase(HasLogger):
     def get_sys_main(cls):
         """ Returns a function to be used as main function for a script. """
         from quickapp import quickapp_main
-        return lambda: quickapp_main(cls, args=None, sys_exit=True)
+
+        def entry(args=None, sys_exit=True):
+            return quickapp_main(cls, args=args, sys_exit=sys_exit)
+
+        return entry
     
-    
+    @classmethod
+    def __call__(cls, *args, **kwargs):
+        print('call')
+        main = cls.get_sys_main()
+        return main(*args, **kwargs)
     
     @classmethod
     def get_program_description(cls):
@@ -135,7 +158,25 @@ class QuickAppBase(HasLogger):
         # Create the parameters and set them using args
         self.parent = parent
         self.set_options_from_args(args)
-        ret = self.go()
+
+        profile = os.environ.get('QUICKAPP_PROFILE', False)
+
+        if not profile:
+            ret = self.go()
+        else:
+
+            import cProfile
+            out = profile
+            print('writing to %r' % out)
+            ret = cProfile.runctx('self.go()', globals(), locals(), out)
+            import pstats
+
+            p = pstats.Stats(out)
+            n = 30
+            p.sort_stats('cumulative').print_stats(n)
+            p.sort_stats('time').print_stats(n)
+
+
         if ret is None:
             ret = 0
         

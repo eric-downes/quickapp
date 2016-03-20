@@ -1,7 +1,8 @@
 from contracts import contract, describe_type, describe_value
-from decent_params import Choice
-from .exceptions import  DecentParamsSemanticError
 
+from decent_params import Choice
+
+from .exceptions import DecentParamsSemanticError
 
 
 not_given = 'DefaultNotGiven'
@@ -81,11 +82,15 @@ class DecentParam(object):
                      nargs=nargs)
         other['type'] = self.ptype
         if self.short is not None:
-            option1 = '-%s' % self.short
-            parser.add_argument(option1, option, **other)
+            parser.add_argument(self._get_short_option(), option, **other)
         else:
             parser.add_argument(option, **other)
          
+    def _get_short_option(self):
+        short = self.short
+        short = short.replace('-', '')
+        option1 = '-%s' % short
+        return option1
 
 class DecentParamsResults():
     
@@ -121,7 +126,6 @@ class DecentParamsResults():
 class DecentParamMultiple(DecentParam):
     """ Allow multiple values """    
     
-    
     def __init__(self, ptype, name, default=not_given, **args):
         if default is not not_given:
             if not isinstance(default, list):
@@ -132,7 +136,6 @@ class DecentParamMultiple(DecentParam):
     @contract(s='str')
     def value_from_string(self, s):
         values = [DecentParam.value_from_string(self, x) for x in s.split(',')]
-#         return Choice(values)
         return values
 
     def validate(self, value):
@@ -142,17 +145,29 @@ class DecentParamMultiple(DecentParam):
         for x in value:
             self.check_type(x)
     
-
     def populate(self, parser):
         option = '--%s' % self.name
-        parser.add_argument(option, nargs='+', type=self.ptype,
+
+        other = dict(nargs='+', type=self.ptype,
                             help=self.get_desc(), default=self.default)
+
+        if self.short is not None:
+            parser.add_argument(self._get_short_option(), option, **other)
+        else:
+            parser.add_argument(option, **other)
+
+
               
 class DecentParamFlag(DecentParam):
     def populate(self, parser, default=False):
         option = '--%s' % self.name
-        parser.add_argument(option, help=self.desc, default=default,
-                            action='store_true')
+        other = dict(help=self.desc, default=default, action='store_true')
+
+        if self.short is not None:
+            parser.add_argument(self._get_short_option(), option, **other)
+        else:
+            parser.add_argument(option, **other)
+
       
         
 class DecentParamChoice(DecentParam):

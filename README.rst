@@ -10,7 +10,6 @@ Simplest QuickApp application
 This is an example of the simplest QuickApp application.
 It does not use Compmake functionality. ::
 
-
      from quickapp import QuickAppBase
 
      class VideoMaker(QuickAppBase):
@@ -48,6 +47,41 @@ Here's an example that uses Compmake to define jobs: ::
      
      if __name__ == '__main__':
          app_example_main()
+
+QuickApp with subcommands
+-----------------------------
+
+Define the parent app by deriving from ``QuickMultiCmdApp``: ::
+
+    class DemoApp(QuickMultiCmdApp):
+        cmd = 'dp'
+        
+        def define_multicmd_options(self, params):
+            params.add_string('config', help='Config Joint')
+            params.add_int('param2', help='Second parameter')
+
+        def initial_setup(self):
+            options = self.get_options()
+            self.info('Loading configuration from %r.' % options.config)
+            self.info('My param2 is %r.' % options.param2)
+
+    main_func = DemoApp.
+            
+Define the subapps by deriving from ``DemoApp.get_sub()``: ::
+
+    class DemoAppCmd1(QuickApp, DemoApp.get_sub()):
+        cmd = 'cmd1'
+        short = 'First command'
+        
+        def define_options(self, params):
+            params.add_int('param1', help='First parameter', default=1)
+            params.add_int('param2', help='Second parameter')
+            
+        def define_jobs(self, context):
+            options = self.get_options()
+            self.info('My param2 is %r.' % options.param2)
+            
+
 
 
      

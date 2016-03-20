@@ -1,13 +1,12 @@
-from .decent_param import (DecentParamFlag, DecentParam, DecentParamMultiple,
-    DecentParamChoice, DecentParamsResults)
-from .exceptions import (DecentParamsUnknownArgs, DecentParamsDefinitionError,
+from .decent_param import (DecentParam, DecentParamChoice, DecentParamFlag, 
+    DecentParamMultiple, DecentParamsResults)
+from .exceptions import (DecentParamsDefinitionError, DecentParamsUnknownArgs, 
     DecentParamsUserError)
 from argparse import RawTextHelpFormatter
 from contracts import contract
 from decent_params import Choice
 from pprint import pformat
 import argparse
-import warnings
 
 __all__ = ['DecentParams']
 
@@ -131,7 +130,7 @@ class DecentParams(object):
                 msg = 'Compulsory option %r not given.' % k
                 raise DecentParamsUserError(self, msg)
             
-            warnings.warn('Not sure below')
+            #warnings.warn('Not sure below')
             # if parsed[k] is not None:
             if k in parsed and parsed[k] is not None:
                 if parsed[k] != self.params[k].default:

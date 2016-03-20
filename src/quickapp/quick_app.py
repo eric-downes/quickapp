@@ -1,22 +1,23 @@
-from .compmake_context import CompmakeContext
+from .compmake_context import CompmakeContext, context_get_merge_data
 from .exceptions import QuickAppException
 from .quick_app_base import QuickAppBase
+from .report_manager import _dynreports_create_index
 from abc import abstractmethod
-from compmake import (batch_command, compmake_console, read_rc_files, comp_prefix,
-    get_comp_prefix, set_compmake_db)
-from compmake.storage.filesystem import StorageFilesystem
-from conf_tools.utils import indent
-from contracts import ContractsMeta, contract
-from decent_params.utils import wrap_script_entry_point, UserError
-from quickapp import logger, QUICKAPP_COMPUTATION_ERROR
+from compmake import CommandFailed, StorageFilesystem, read_rc_files
+from compmake.context import Context
+from contracts import ContractsMeta, contract, indent
+from decent_params.utils import UserError, wrap_script_entry_point
+from quickapp import QUICKAPP_COMPUTATION_ERROR, logger
 import contracts
 import os
+import shutil
 import sys
 import traceback
-import warnings
 
-
-__all__ = ['QuickApp', 'quickapp_main']
+__all__ = [
+    'QuickApp', 
+    'quickapp_main',
+]
 
 
 class QuickApp(QuickAppBase):
@@ -37,7 +38,6 @@ class QuickApp(QuickAppBase):
         """ Define options for the application. """
         pass
 
-
     # Implementation
              
     def _define_options_compmake(self, params):
@@ -53,11 +53,14 @@ class QuickApp(QuickAppBase):
                           help='Output directory',
                                     default=default_output_dir, group=g)
     
+        params.add_flag('reset', 
+                        help='Deletes the output directory', group=g)
+    
         params.add_flag('console', help='Use Compmake console', group=g)
 
         params.add_string('command', short='c',
                       help="Command to pass to compmake for batch mode",
-                      default='make', group=g)
+                      default='make recurse=1', group=g)
     
     def define_program_options(self, params):
         self._define_options_compmake(params)
@@ -72,15 +75,14 @@ class QuickApp(QuickAppBase):
             parent = parent.parent
         return None
         
-    def go(self):  
-         
+    def go(self): 
         # check that if we have a parent who is a quickapp,
         # then use its context      
         qapp_parent = self.get_qapp_parent()
         if qapp_parent is not None:
             # self.info('Found parent: %s' % qapp_parent)
-            context = qapp_parent.child_context  
-            self.define_jobs_context(context)
+            qc = qapp_parent.child_context  
+            self.define_jobs_context(qc)
             return
         else:
             # self.info('Parent not found')
@@ -96,56 +98,67 @@ class QuickApp(QuickAppBase):
 
         options = self.get_options()
         
+        
         if self.get_qapp_parent() is None:
             # only do this if somebody didn't do it before
             if not options.contracts:
-                msg = 'PyContracts disabled for speed. Use --contracts to activate.'
+                msg = ('PyContracts disabled for speed. '
+                       'Use --contracts to activate.')
                 self.logger.warning(msg)
                 contracts.disable_all()
 
-        warnings.warn('removed configuration below')  # (start)
-
         output_dir = options.output
+        
+        if options.reset:
+            if os.path.exists(output_dir):
+                self.logger.info('Removing output dir %r.' % output_dir)
+                shutil.rmtree(output_dir)
         
         # Compmake storage for results        
         storage = os.path.join(output_dir, 'compmake')
-        sf = StorageFilesystem(storage, compress=True)
-#     sf = StorageFilesystem2(directory)
-#     sf = MemoryCache(sf)
-        set_compmake_db(sf)
-
-        # use_filesystem(storage)
-        read_rc_files()
-        
-        context = CompmakeContext(parent=None, qapp=self, job_prefix=None,
+        db = StorageFilesystem(storage, compress=True)
+        currently_executing = ['root']
+        # The original Compmake context
+        oc = Context(db=db, currently_executing=currently_executing)
+        # Our wrapper
+        qc = CompmakeContext(cc=oc,
+                                  parent=None, qapp=self, job_prefix=None,
                                   output_dir=output_dir)
-        self.context = context
-        original = get_comp_prefix()
-        self.define_jobs_context(context)
-        comp_prefix(original) 
+        read_rc_files(oc)
         
-        context.finalize_jobs()
+        original = oc.get_comp_prefix()
+        self.define_jobs_context(qc)
+        oc.comp_prefix(original)
         
-        if context.n_comp_invocations == 0:
+        merged  = context_get_merge_data(qc)
+    
+        # Only create the index job if we have reports defined
+        # or some branched context (which might create reports)
+        has_reports = len(qc.get_report_manager().allreports) > 0
+        has_branched = qc.has_branched()
+        if has_reports or has_branched:
+            self.info('Creating reports')
+            oc.comp_dynamic(_dynreports_create_index, merged)
+        else:
+            self.info('Not creating reports.')
+        
+        ndefined = len(oc.get_jobs_defined_in_this_session())
+        if ndefined == 0:
             # self.comp was never called
             msg = 'No jobs defined.'
             raise ValueError(msg)
         else: 
             if not options.console:
-                batch_result = batch_command(options.command)
-                if isinstance(batch_result, str):
+                try: 
+                    oc.batch_command(options.command)
+                except CommandFailed:
                     ret = QUICKAPP_COMPUTATION_ERROR
-                elif isinstance(batch_result, int):
-                    if batch_result == 0:
-                        ret = 0
-                    else:
-                        # xxx: discarded information
-                        ret = QUICKAPP_COMPUTATION_ERROR
                 else:
-                    assert False 
+                    ret = 0
+                     
                 return ret
             else:
-                compmake_console()
+                oc.compmake_console()
                 return 0
 
     @contract(args='dict(str:*)|list(str)', extra_dep='list')
@@ -182,8 +195,7 @@ class QuickApp(QuickAppBase):
                 res = instance.go()  
             else:
                 instance.context = child_context
-                res = instance.define_jobs_context(child_context)
-                child_context.finalize_jobs()
+                res = instance.define_jobs_context(child_context)                
                 
             # Add his jobs to our list of jobs
             context._jobs.update(child_context.all_jobs_dict()) 
