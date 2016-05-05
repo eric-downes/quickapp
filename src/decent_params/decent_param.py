@@ -3,6 +3,7 @@ from contracts import contract, describe_type, describe_value
 from decent_params import Choice
 
 from .exceptions import DecentParamsSemanticError
+from optparse import Option
 
 
 not_given = 'DefaultNotGiven'
@@ -23,10 +24,12 @@ class DecentParam(object):
         self.order = None
         self.allow_multi = allow_multi
         self.group = group
+
+        self.params = None  # the DecentParams structure
+
         if self.default is not None:
             self.validate(self.default)
         
-        self.params = None  # the DecentParams structure 
         
     def __repr__(self):
         return 'DecentParam(%r,%r)' % (self.ptype, self.name)
@@ -122,7 +125,21 @@ class DecentParamsResults():
     def given(self, name):
         return name in self._given
     
- 
+# class MyOption(Option):
+#
+#     ACTIONS = Option.ACTIONS + ("extend",)
+#     STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
+#     TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
+#     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + ("extend",)
+#
+#     def take_action(self, action, dest, opt, value, values, parser):
+#         if action == "extend":
+#             lvalue = value.split(",")
+#             values.ensure_value(dest, []).extend(lvalue)
+#         else:
+#             Option.take_action(
+#                 self, action, dest, opt, value, values, parser)
+
 class DecentParamMultiple(DecentParam):
     """ Allow multiple values """    
     
@@ -148,7 +165,7 @@ class DecentParamMultiple(DecentParam):
     def populate(self, parser):
         option = '--%s' % self.name
 
-        other = dict(nargs='+', type=self.ptype,
+        other = dict(nargs=1, type=self.ptype, action='extend',
                             help=self.get_desc(), default=self.default)
 
         if self.short is not None:
