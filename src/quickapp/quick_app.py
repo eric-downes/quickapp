@@ -13,6 +13,7 @@ import os
 import shutil
 import sys
 import traceback
+from compmake.exceptions import ShellExitRequested
 
 __all__ = [
     'QuickApp', 
@@ -153,6 +154,8 @@ class QuickApp(QuickAppBase):
                     oc.batch_command(options.command)
                 except CommandFailed:
                     ret = QUICKAPP_COMPUTATION_ERROR
+                except ShellExitRequested:
+                    ret = 0
                 else:
                     ret = 0
                      
