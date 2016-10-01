@@ -3,7 +3,7 @@ from contracts import contract, describe_type, describe_value
 from decent_params import Choice
 
 from .exceptions import DecentParamsSemanticError
-from optparse import Option
+# from optparse import Option
 
 
 not_given = 'DefaultNotGiven'

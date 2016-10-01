@@ -458,7 +458,7 @@ def write_report_and_update(report, report_nid, report_html, all_reports, index_
 @contract(report=Report, report_html='str')
 def write_report(report, report_html, static_dir, write_pickle=False, **kwargs):
     
-    logger.debug('Writing to %r.' % friendly_path(report_html))
+    logger.debug('Writing to %s ' % friendly_path(report_html))
 #     if False:
 #         # Note here they might overwrite each other
 #         rd = os.path.join(os.path.dirname(report_html), 'images')
