@@ -5,9 +5,8 @@ from pprint import pformat
 import sys
 import traceback
 
-from contracts import contract, describe_value, ContractsMeta
-
 from conf_tools.utils import indent
+from contracts import contract, describe_value, ContractsMeta
 from decent_params import DecentParams, UserError, DecentParamsUserError
 from quickapp import logger
 
@@ -15,8 +14,9 @@ from .exceptions import QuickAppException
 from .utils import HasLogger
 
 
-__all__ = ['QuickAppBase']
-
+__all__ = [
+    'QuickAppBase',
+]
 
 class QuickAppBase(HasLogger):
     """
@@ -24,8 +24,7 @@ class QuickAppBase(HasLogger):
         
             cmd
             usage
-            description (deprecated) => use docstring
-            
+            description (deprecated) => use docstring 
     
     """
     __metaclass__ = ContractsMeta
@@ -77,7 +76,7 @@ class QuickAppBase(HasLogger):
     
     @classmethod
     def __call__(cls, *args, **kwargs):
-        print('call')
+        #print('call')
         main = cls.get_sys_main()
         return main(*args, **kwargs)
     

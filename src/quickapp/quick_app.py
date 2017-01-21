@@ -152,12 +152,16 @@ class QuickApp(QuickAppBase):
         else: 
             if not options.console:
                 try: 
-                    oc.batch_command(options.command)
+                    ret0= oc.batch_command(options.command)
+                    print('qapp: ret0 = %s'  % ret0)
                 except CommandFailed:
+                    print('qapp: CommandFailed')
                     ret = QUICKAPP_COMPUTATION_ERROR
                 except ShellExitRequested:
+                    print('qapp: ShellExitRequested')
                     ret = 0
                 else:
+                    print('qapp: else ret = 0')
                     ret = 0
                      
                 return ret
