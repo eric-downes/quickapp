@@ -7,7 +7,7 @@ from contracts import contract, describe_type
 from contracts import check_isinstance
 from types import NoneType
 import os
-from contracts.utils import raise_desc
+from contracts.utils import raise_desc, raise_wrapped
 
 __all__ = [
     'CompmakeContext',
@@ -353,7 +353,7 @@ def _dynreports_wrap_dynamic(context, qc, function, args, kw):
         res['f-result'] = function(qc, *args, **kw)
     except TypeError as e:
         msg = 'Could not call %r' % function
-        raise_desc(TypeError, e, msg, args=args, kw=kw)
+        raise_wrapped(TypeError, e, msg, args=args, kw=kw)
         
     res['context-res'] = context_get_merge_data(qc)
     return res
