@@ -17,7 +17,7 @@ class DecentParamsUserError(UserError):
         self.dp = dp
         self.msg = msg
         s = msg
-        s += '\n' + str(dp)
+#         s += '\n' + str(dp)
         Exception.__init__(self, s)
 
 class DecentParamsSemanticError(DecentParamsUserError):
@@ -30,4 +30,5 @@ class DecentParamsUnknownArgs(DecentParamsUserError):
     
     def __init__(self, dp, unknown):
         msg = 'Could not interpret %r.' % unknown
+        msg += '\n' + 'Known parameters: %s.' % ', '.join(dp.params)
         DecentParamsUserError.__init__(self, dp, msg)

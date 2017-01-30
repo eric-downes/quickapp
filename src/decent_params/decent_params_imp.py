@@ -33,7 +33,9 @@ class DecentParams(object):
         self.accepts_extra = True
           
     def add_flag(self, name, **args):
-        self._add(DecentParamFlag(ptype=bool, name=name, default=False, **args))
+        if not 'default' in args:
+            args['default'] = False
+        self._add(DecentParamFlag(ptype=bool, name=name, **args))
 
     def add_string(self, name, **args):
         self._add(DecentParam(ptype=str, name=name, **args))
@@ -43,6 +45,9 @@ class DecentParams(object):
 
     def add_int(self, name, **args):
         self._add(DecentParam(ptype=int, name=name, **args))
+
+    def add_bool(self, name, **args):
+        self._add(DecentParam(ptype=bool, name=name, **args))
 
     def add_string_list(self, name, **args):
         self._add(DecentParamMultiple(ptype=str, name=name, **args))
@@ -168,11 +173,6 @@ class DecentParams(object):
             g_params = [p for p in self.params.values() if p.group == g] 
             for p in g_params:
                 p.populate(group)
-#                 
-#         print groups
-#         params = sorted(self.params.values(), key=lambda x: x.order)
-#         for p in params:
-#             
     
     def create_parser(self, prog=None, usage=None, epilog=None,
                           description=None):
@@ -198,6 +198,9 @@ class DecentParams(object):
         parser = self.create_parser(prog=prog, usage=usage, epilog=epilog, description=description)
 
         values, given, extra = self.parse_using_parser_extra(parser, args)
+        print('values: %s' % values)
+        print('given: %s' % given)
+        print('extra: %s' % extra)
         if extra and not self.accepts_extra:
             msg = 'Found extra arguments not accepted: %s' % extra
             raise DecentParamsUserError(self, msg)
@@ -207,8 +210,14 @@ class DecentParams(object):
  
     @contract(config='dict(str:*)')
     def get_dpr_from_dict(self, config):
-        extra = []  # TODO 
-        values, given = self._interpret_args2(config)
-        dpr = DecentParamsResults(values, given, self, extra=extra)
-        return dpr
+        args = []
+        for k,v in config.items():
+            args.append('--%s'%k)
+            args.append(v)
+        return self.get_dpr_from_args(args)
+#         
+#         extra = []  # TODO 
+#         values, given = self._interpret_args2(config)
+#         dpr = DecentParamsResults(values, given, self, extra=extra)
+#         return dpr
 

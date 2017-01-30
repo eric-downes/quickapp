@@ -42,6 +42,7 @@ class DecentParam(object):
                  
     def value_from_string(self, s):
         """ Possibly returns Choice(options) """
+        print('%s %s' % (s, self.ptype))
         sep = ','
         if isinstance(s, str) and sep in s:
             return Choice([self.value_from_string(x) 
@@ -54,7 +55,9 @@ class DecentParam(object):
         if self.ptype == int:
             return int(s)  # TODO: check
         if self.ptype == bool:
-            return bool(s)  # TODO: check
+            res = bool(s)  # TODO: check
+            print('s %s -> %s' % (s, res))
+            return res 
         msg = 'Unknown type %r' % self.ptype
         raise DecentParamsSemanticError(self.params, self, msg)
     
