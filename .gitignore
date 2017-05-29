@@ -10,3 +10,4 @@ quickapp_test2
 coverage_information
 out-example_recursive_reports.py
 dist
+.DS_Store
