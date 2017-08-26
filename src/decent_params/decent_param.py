@@ -168,8 +168,11 @@ class DecentParamMultiple(DecentParam):
     def populate(self, parser):
         option = '--%s' % self.name
 
-        other = dict(nargs=1, type=self.ptype, action='extend',
+        other = dict(nargs='*',type=self.ptype, #action='append',
                             help=self.get_desc(), default=self.default)
+
+#         other = dict(nargs=1, type=self.ptype, action='append',
+#                             help=self.get_desc(), default=self.default)
 
         if self.short is not None:
             parser.add_argument(self._get_short_option(), option, **other)
