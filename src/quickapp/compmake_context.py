@@ -1,13 +1,16 @@
-from .report_manager import ReportManager
-from .resource_manager import ResourceManager
 from compmake import Context, Promise
 from compmake.context import load_static_storage
-from conf_tools import GlobalConfig
-from contracts import contract, describe_type
 from contracts import check_isinstance
-from types import NoneType
+from contracts import contract, describe_type
 import os
-from contracts.utils import raise_desc, raise_wrapped
+from types import NoneType
+
+from conf_tools import GlobalConfig
+from contracts.utils import raise_wrapped
+
+from .report_manager import ReportManager
+from .resource_manager import ResourceManager
+
 
 __all__ = [
     'CompmakeContext',
