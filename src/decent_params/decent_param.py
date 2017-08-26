@@ -168,7 +168,7 @@ class DecentParamMultiple(DecentParam):
     def populate(self, parser):
         option = '--%s' % self.name
 
-        other = dict(nargs='*',type=self.ptype, #action='append',
+        other = dict(nargs='+',type=self.ptype, 
                             help=self.get_desc(), default=self.default)
 
 #         other = dict(nargs=1, type=self.ptype, action='append',
