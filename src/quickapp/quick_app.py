@@ -1,19 +1,22 @@
-from .compmake_context import CompmakeContext, context_get_merge_data
-from .exceptions import QuickAppException
-from .quick_app_base import QuickAppBase
-from .report_manager import _dynreports_create_index
 from abc import abstractmethod
 from compmake import CommandFailed, StorageFilesystem, read_rc_files
 from compmake.context import Context
+from compmake.exceptions import ShellExitRequested
 from contracts import ContractsMeta, contract, indent
-from decent_params.utils import UserError, wrap_script_entry_point
-from quickapp import QUICKAPP_COMPUTATION_ERROR, logger
 import contracts
 import os
 import shutil
 import sys
 import traceback
-from compmake.exceptions import ShellExitRequested
+
+from decent_params.utils import UserError, wrap_script_entry_point
+from quickapp import QUICKAPP_COMPUTATION_ERROR, logger
+
+from .compmake_context import CompmakeContext, context_get_merge_data
+from .exceptions import QuickAppException
+from .quick_app_base import QuickAppBase
+from .report_manager import _dynreports_create_index
+
 
 __all__ = [
     'QuickApp', 

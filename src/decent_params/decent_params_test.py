@@ -7,6 +7,23 @@ from decent_params import DecentParams, UserError, DecentParamsUnknownArgs
 
 class ParamsTest(unittest.TestCase):
         
+    def decent_params_test0(self):
+        
+        p = DecentParams()
+        p.add_float_list('floats')
+        
+        args = ['--floats', '1.2', '2.3']
+        
+        try:    
+            res = p.parse_args(args)
+        except SystemExit as e:
+            print e
+            raise Exception(str(e))
+        
+        self.assertEqual(res.given('floats'), True)
+        self.assertEqual(res.given('int1'), False)
+        self.assertEqual(res['floats'], [1.2, 2.3])
+        
     def decent_params_test1(self):
         
         p = DecentParams()
