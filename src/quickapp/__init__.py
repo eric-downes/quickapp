@@ -1,4 +1,4 @@
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 
 import logging
 logging.basicConfig()
@@ -21,8 +21,8 @@ from .quick_app import *
 from .compmake_context import *
 from .app_utils import *
 
-symbols = [QuickMultiCmdApp, QuickApp, 
+symbols = [QuickMultiCmdApp, QuickApp,
            QuickAppBase, add_subcommand, ResourceManager]
 
-for s in symbols: 
+for s in symbols:
     s.__module__ = 'quickapp'

@@ -19,7 +19,7 @@ from .report_manager import _dynreports_create_index
 
 
 __all__ = [
-    'QuickApp', 
+    'QuickApp',
     'quickapp_main',
 ]
 
@@ -43,7 +43,7 @@ class QuickApp(QuickAppBase):
         pass
 
     # Implementation
-             
+
     def _define_options_compmake(self, params):
         script_name = self.get_prog_name()
         script_name.replace('.py', '')
@@ -57,20 +57,20 @@ class QuickApp(QuickAppBase):
         params.add_string('output', short='o',
                           help='Output directory',
                                     default=default_output_dir, group=g)
-    
-        params.add_flag('reset', 
+
+        params.add_flag('reset',
                         help='Deletes the output directory', group=g)
-    
+
         params.add_flag('console', help='Use Compmake console', group=g)
 
         params.add_string('command', short='c',
                       help="Command to pass to compmake for batch mode",
                       default='make recurse=1', group=g)
-    
+
     def define_program_options(self, params):
         self._define_options_compmake(params)
         self.define_options(params)
-    
+
     def get_qapp_parent(self):
         parent = self.parent
         while parent is not None:
@@ -79,22 +79,22 @@ class QuickApp(QuickAppBase):
                 return parent
             parent = parent.parent
         return None
-        
-    def go(self): 
+
+    def go(self):
         # check that if we have a parent who is a quickapp,
-        # then use its context      
+        # then use its context
         qapp_parent = self.get_qapp_parent()
         if qapp_parent is not None:
             # self.info('Found parent: %s' % qapp_parent)
-            qc = qapp_parent.child_context  
+            qc = qapp_parent.child_context
             self.define_jobs_context(qc)
             return
         else:
             # self.info('Parent not found')
             pass
-            
 
-        if False:            
+
+        if False:
             import resource
             gbs = 5
             max_mem = long(gbs * 1000 * 1048576L)
@@ -102,8 +102,8 @@ class QuickApp(QuickAppBase):
             resource.setrlimit(resource.RLIMIT_DATA, (max_mem, -1))
 
         options = self.get_options()
-        
-        
+
+
         if self.get_qapp_parent() is None:
             # only do this if somebody didn't do it before
             if not options.contracts:
@@ -113,13 +113,13 @@ class QuickApp(QuickAppBase):
                 contracts.disable_all()
 
         output_dir = options.output
-        
+
         if options.reset:
             if os.path.exists(output_dir):
                 self.logger.info('Removing output dir %r.' % output_dir)
                 shutil.rmtree(output_dir)
-        
-        # Compmake storage for results        
+
+        # Compmake storage for results
         storage = os.path.join(output_dir, 'compmake')
         db = StorageFilesystem(storage, compress=True)
         currently_executing = ['root']
@@ -130,13 +130,13 @@ class QuickApp(QuickAppBase):
                                   parent=None, qapp=self, job_prefix=None,
                                   output_dir=output_dir)
         read_rc_files(oc)
-        
+
         original = oc.get_comp_prefix()
         self.define_jobs_context(qc)
         oc.comp_prefix(original)
-        
+
         merged  = context_get_merge_data(qc)
-    
+
         # Only create the index job if we have reports defined
         # or some branched context (which might create reports)
         has_reports = len(qc.get_report_manager().allreports) > 0
@@ -146,15 +146,15 @@ class QuickApp(QuickAppBase):
             oc.comp_dynamic(_dynreports_create_index, merged)
         else:
             self.info('Not creating reports.')
-        
+
         ndefined = len(oc.get_jobs_defined_in_this_session())
         if ndefined == 0:
             # self.comp was never called
             msg = 'No jobs defined.'
             raise ValueError(msg)
-        else: 
+        else:
             if not options.console:
-                try: 
+                try:
                     _ = oc.batch_command(options.command)
                     #print('qapp: ret0 = %s'  % ret0)
                 except CommandFailed:
@@ -166,7 +166,7 @@ class QuickApp(QuickAppBase):
                 else:
                     #print('qapp: else ret = 0')
                     ret = 0
-                     
+
                 return ret
             else:
                 oc.compmake_console()
@@ -179,10 +179,10 @@ class QuickApp(QuickAppBase):
                        add_job_prefix=None,
                        separate_resource_manager=False,
                        separate_report_manager=False,
-                       extra_report_keys=None):     
+                       extra_report_keys=None):
         instance = cmd_class()
         instance.set_parent(self)
-        is_quickapp = isinstance(instance, QuickApp) 
+        is_quickapp = isinstance(instance, QuickApp)
 
         try:
             # we are already in a context; just define jobs
@@ -193,25 +193,25 @@ class QuickApp(QuickAppBase):
                                           separate_resource_manager=separate_resource_manager,
                                           separate_report_manager=separate_report_manager,
                                           add_job_prefix=add_job_prefix)  # XXX
-        
+
             if isinstance(args, list):
                 instance.set_options_from_args(args)
             elif isinstance(args, dict):
                 instance.set_options_from_dict(args)
             else:
                 assert False
-            
+
             if not is_quickapp:
                 self.child_context = child_context
-                res = instance.go()  
+                res = instance.go()
             else:
                 instance.context = child_context
-                res = instance.define_jobs_context(child_context)                
-                
+                res = instance.define_jobs_context(child_context)
+
             # Add his jobs to our list of jobs
-            context._jobs.update(child_context.all_jobs_dict()) 
+            context._jobs.update(child_context.all_jobs_dict())
             return res
-        
+
         except Exception as e:
             msg = 'While trying to run  %s\n' % cmd_class.__name__
             msg += 'with arguments = %s\n' % args
@@ -223,25 +223,23 @@ class QuickApp(QuickAppBase):
             else:
                 msg += indent(traceback.format_exc(e), '> ')
             raise QuickAppException(msg)
-      
+
 
 def quickapp_main(quickapp_class, args=None, sys_exit=True):
     """
         Use like this:
-        
+
             if __name__ == '__main__':
                 quickapp_main(MyQuickApp)
-                
-        
+
+
         if sys_exit is True, we call sys.exis(ret), otherwise we return the value.
-         
+
     """
     instance = quickapp_class()
     if args is None:
         args = sys.argv[1:]
-    
+
     return wrap_script_entry_point(instance.main, logger,
                             exceptions_no_traceback=(UserError, QuickAppException),
                             args=args, sys_exit=sys_exit)
-
-
