@@ -6,4 +6,6 @@ bump-upload:
 	bumpversion patch
 	git push --tags
 	git push --all
-	python setup.py sdist upload
+	rm dist/*
+	python setup.py sdist
+	twine upload dist/*
