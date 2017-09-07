@@ -198,9 +198,9 @@ class DecentParams(object):
         parser = self.create_parser(prog=prog, usage=usage, epilog=epilog, description=description)
 
         values, given, extra = self.parse_using_parser_extra(parser, args)
-        print('values: %s' % values)
-        print('given: %s' % given)
-        print('extra: %s' % extra)
+        #print('values: %s' % values)
+        #print('given: %s' % given)
+        #print('extra: %s' % extra)
         if extra and not self.accepts_extra:
             msg = 'Found extra arguments not accepted: %s' % extra
             raise DecentParamsUserError(self, msg)
