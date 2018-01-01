@@ -254,9 +254,6 @@ def parse_known_intermixed_args(self, args=None, namespace=None, _fallback=None)
 
     positionals = self._get_positional_actions()
     
-    print positionals
-    for action in positionals:
-        print('action %s  nargs %s' % (action, action.nargs))
     a = [action for action in positionals if action.nargs in [PARSER, REMAINDER]]
     if a:
         if _fallback is None:
