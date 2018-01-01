@@ -1,12 +1,18 @@
-from .decent_param import (DecentParam, DecentParamChoice, DecentParamFlag,
-    DecentParamMultiple, DecentParamsResults)
-from .exceptions import (DecentParamsDefinitionError, DecentParamsUnknownArgs,
-    DecentParamsUserError)
+from argparse import ArgumentParser, PARSER, REMAINDER, ArgumentError
 from argparse import RawTextHelpFormatter
+import argparse
+from gettext import gettext as _
+import logging
+from pprint import pformat
+
 from contracts import contract
 from decent_params import Choice
-from pprint import pformat
-import argparse
+
+from .decent_param import (DecentParam, DecentParamChoice, DecentParamFlag,
+                           DecentParamMultiple, DecentParamsResults)
+from .exceptions import (DecentParamsDefinitionError, DecentParamsUnknownArgs,
+                         DecentParamsUserError)
+
 
 __all__ = ['DecentParams']
 
@@ -98,14 +104,19 @@ class DecentParams(object):
         """
             This returns also the extra parameters
 
-            returns: values, given, argv
+            returns: values, given, extra
         """
 
-        if self.accepts_extra:
-            parser.add_argument('remainder', nargs=argparse.REMAINDER)
-
         try:
-            argparse_res, unknown = parser.parse_known_args(args)
+            if False:
+                if self.accepts_extra:
+                    parser.add_argument('remainder', nargs=argparse.REMAINDER)
+                argparse_res, unknown = parser.parse_known_args(args)
+            else:
+                parser.add_argument('remainder', nargs='*')
+                argparse_res, unknown = parser.parse_known_intermixed_args(args)
+#                 print('argparse_res: %s' % argparse_res)
+#                 print('unknown: %s' % unknown)
         except SystemExit:
             raise  # XXX
 
@@ -119,6 +130,8 @@ class DecentParams(object):
 
         values, given = self._interpret_args(argparse_res)
         # TODO: raise if extra is given
+        
+#         print('extra: %r' % extra)
         return values, given, extra
 
     def _interpret_args(self, argparse_res):
@@ -195,18 +208,15 @@ class DecentParams(object):
     @contract(args='list(str)')
     def get_dpr_from_args(self, args, prog=None, usage=None, epilog=None,
                           description=None):
-        parser = self.create_parser(prog=prog, usage=usage, epilog=epilog, description=description)
+        parser = self.create_parser(prog=prog, usage=usage, 
+                                    epilog=epilog, description=description)
 
         values, given, extra = self.parse_using_parser_extra(parser, args)
-        #print('values: %s' % values)
-        #print('given: %s' % given)
-        #print('extra: %s' % extra)
         if extra and not self.accepts_extra:
             msg = 'Found extra arguments not accepted: %s' % extra
             raise DecentParamsUserError(self, msg)
         dpr = DecentParamsResults(values, given, self, extra=extra)
         return dpr
-
 
     @contract(config='dict(str:*)')
     def get_dpr_from_dict(self, config):
@@ -215,8 +225,101 @@ class DecentParams(object):
             args.append('--%s'%k)
             args.append(v)
         return self.get_dpr_from_args(args)
-#
-#         extra = []  # TODO
-#         values, given = self._interpret_args2(config)
-#         dpr = DecentParamsResults(values, given, self, extra=extra)
-#         return dpr
+
+
+# from warnings import warn
+logging.basicConfig(format='%(levelname)s: Intermix: %(message)s')
+def warn(message):
+    logging.warning(message)
+
+def parse_intermixed_args(self, args=None, namespace=None):
+    args, argv = self.parse_known_intermixed_args(args, namespace)
+    if argv:
+        msg = _('unrecognized arguments: %s')
+        self.error(msg % ' '.join(argv))
+    return args
+
+
+def parse_known_intermixed_args(self, args=None, namespace=None, _fallback=None):
+    # self - argparse parser
+    # args, namespace - as used by parse_known_args
+    # _fallback - action to take if it can't handle this parser's arguments
+    #      (default raises an error)
+    # returns a namespace and list of extras
+
+    # positional can be freely intermixed with optionals
+    # optionals are first parsed with all positional arguments deactivated
+    # the 'extras' are then parsed
+    # positionals 'deactivated' by setting nargs=0
+
+    positionals = self._get_positional_actions()
+    
+    print positionals
+    for action in positionals:
+        print('action %s  nargs %s' % (action, action.nargs))
+    a = [action for action in positionals if action.nargs in [PARSER, REMAINDER]]
+    if a:
+        if _fallback is None:
+            a = a[0]
+            err = ArgumentError(a, 'parse_intermixed_args: positional arg with nargs=%s'%a.nargs)
+            self.error(str(err))
+        else:
+            return _fallback(args, namespace)
+
+    if [action.dest for group in self._mutually_exclusive_groups
+        for action in group._group_actions if action in positionals]:
+        if _fallback is None:
+            self.error('parse_intermixed_args: positional in mutuallyExclusiveGroup')
+        else:
+            return _fallback(args, namespace)
+
+    save_usage = self.usage
+    try:
+        if self.usage is None:
+            # capture the full usage for use in error messages
+            self.usage = self.format_usage()[7:]
+        for action in positionals:
+            # deactivate positionals
+            action.save_nargs = action.nargs
+            action.nargs = 0
+        try:
+            namespace, remaining_args = self.parse_known_args(args, namespace)
+            for action in positionals:
+                # remove the empty positional values from namespace
+                if hasattr(namespace, action.dest):
+                    delattr(namespace, action.dest)
+        except SystemExit:
+            warn('error from 1st parse_known_args')
+            raise
+        finally:
+            # restore nargs and usage before exiting
+            for action in positionals:
+                action.nargs = action.save_nargs
+            #self.usage = save_usage
+        logging.info('1st: %s,%s'%(namespace, remaining_args))
+        # parse positionals
+        # optionals aren't normally required, but just in case, turn that off
+        optionals = self._get_optional_actions()
+        for action in optionals:
+            action.save_required = action.required
+            action.required = False
+        for group in self._mutually_exclusive_groups:
+            group.save_required = group.required
+            group.required = False
+        try:
+            namespace, extras = self.parse_known_args(remaining_args, namespace)
+        except SystemExit:
+            warn('error from 2nd parse_known_args')
+            raise
+        finally:
+            # restore parser values before exiting
+            for action in optionals:
+                action.required = action.save_required
+            for group in self._mutually_exclusive_groups:
+                group.required = group.save_required
+    finally:
+        self.usage = save_usage
+    return namespace, extras
+
+ArgumentParser.parse_intermixed_args = parse_intermixed_args
+ArgumentParser.parse_known_intermixed_args = parse_known_intermixed_args

@@ -62,7 +62,6 @@ class QuickAppBase(HasLogger):
             Must be implemented. This should return either None to mean success, 
             or an integer error code. 
         """
-        pass
     
     @classmethod
     def get_sys_main(cls):
@@ -76,7 +75,6 @@ class QuickAppBase(HasLogger):
     
     @classmethod
     def __call__(cls, *args, **kwargs):
-        #print('call')
         main = cls.get_sys_main()
         return main(*args, **kwargs)
     
@@ -95,7 +93,8 @@ class QuickAppBase(HasLogger):
         
         if docs is None:
             logger.warn('No description at all for %s' % cls) 
-        
+        else:
+            docs = docs.strip()
         return docs
     
     @classmethod
@@ -113,6 +112,10 @@ class QuickAppBase(HasLogger):
             will be substituted with the name of the program.
         """
         usage = cls.__dict__.get('usage', None)
+        if usage is None:
+            pass
+        else:
+            usage = usage.strip()
         return usage
     
     @classmethod

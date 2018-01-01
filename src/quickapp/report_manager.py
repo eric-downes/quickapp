@@ -1,16 +1,19 @@
-from .rm import write_report_single
 from compmake import Context, Promise
 from compmake.utils import duration_compact
+import os
+from pprint import pformat
+import time
+
 from conf_tools.utils import friendly_path
 from contracts import contract, describe_type, describe_value
-from pprint import pformat
 from quickapp import logger
 from reprep import Report
 from reprep.report_utils import StoreResults
 from reprep.utils import frozendict2, natsorted
+
 import numpy as np
-import os
-import time
+
+from .rm import write_report_single
 
 
 __all__ = [

@@ -16,6 +16,7 @@ from .compmake_context import CompmakeContext, context_get_merge_data
 from .exceptions import QuickAppException
 from .quick_app_base import QuickAppBase
 from .report_manager import _dynreports_create_index
+from compmake.jobs.uptodate import CacheQueryDB
 
 
 __all__ = [
@@ -29,7 +30,6 @@ class QuickApp(QuickAppBase):
     """ Template for an application that uses compmake to define jobs. """
 
     __metaclass__ = ContractsMeta
-
 
     # Interface to be implemented
     @abstractmethod
@@ -65,7 +65,7 @@ class QuickApp(QuickAppBase):
 
         params.add_string('command', short='c',
                       help="Command to pass to compmake for batch mode",
-                      default='make recurse=1', group=g)
+                      default=None, group=g)
 
     def define_program_options(self, params):
         self._define_options_compmake(params)
@@ -135,7 +135,7 @@ class QuickApp(QuickAppBase):
         self.define_jobs_context(qc)
         oc.comp_prefix(original)
 
-        merged  = context_get_merge_data(qc)
+        merged = context_get_merge_data(qc)
 
         # Only create the index job if we have reports defined
         # or some branched context (which might create reports)
@@ -153,9 +153,33 @@ class QuickApp(QuickAppBase):
             msg = 'No jobs defined.'
             raise ValueError(msg)
         else:
-            if not options.console:
+            if options.console:
+                oc.compmake_console()
+                return 0
+            else:
+                cq = CacheQueryDB(oc.get_compmake_db())
+                targets = cq.all_jobs()
+                todo, done, ready = cq.list_todo_targets(targets)
+                
+                if not todo:
+                    msg = "Note: there is nothing for me to do. "
+                    msg += '\n(Jobs todo: %s done: %s ready: %s)' % (len(todo), len(done), len(ready))
+                    msg += '\nThis application uses a cache system (Compmake) for the results.'
+                    msg += '\nThis means that if you call it second time with the same arguments it will not do anything.'
+                    msg += '\n'
+                    msg += '\nTo force re-doing of everything, use the option --reset.'
+                    msg += '\n'
+                    msg += '\nTo inspect what was already done, use the option --console.'
+                    self.warn(msg)
+                    return 0
+            
+                if options.command is None:
+                    command = 'make recurse=1'
+                else:
+                    command = options.command
+                        
                 try:
-                    _ = oc.batch_command(options.command)
+                    _ = oc.batch_command(command)
                     #print('qapp: ret0 = %s'  % ret0)
                 except CommandFailed:
                     #print('qapp: CommandFailed')
@@ -166,11 +190,9 @@ class QuickApp(QuickAppBase):
                 else:
                     #print('qapp: else ret = 0')
                     ret = 0
-
+    
                 return ret
-            else:
-                oc.compmake_console()
-                return 0
+                
 
     @contract(args='dict(str:*)|list(str)', extra_dep='list')
     def call_recursive(self, context, child_name, cmd_class, args,
