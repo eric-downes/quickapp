@@ -46,8 +46,10 @@ class QuickApp(QuickAppBase):
 
     def _define_options_compmake(self, params):
         script_name = self.get_prog_name()
-        script_name.replace('.py', '')
-        default_output_dir = 'out-%s/' % script_name
+        s = script_name
+        s = s.replace('.py', '')
+        s = s.replace(' ', '_')
+        default_output_dir = 'out-%s/' % s
 
         g = 'Generic arguments for Quickapp'
         # TODO: use  add_help=False to ARgParsre

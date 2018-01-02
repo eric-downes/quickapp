@@ -23,6 +23,7 @@ class DecentParams(object):
         self.prog = prog
         self.params = {}
         self.accepts_extra = False
+        self.accepts_extra_description = None
 
     def __str__(self):
         return 'DecentParams(%s;extra=%s)' % (pformat(self.params), self.accepts_extra)
@@ -34,9 +35,10 @@ class DecentParams(object):
         p.order = len(self.params)
         self.params[p.name] = p
 
-    def accept_extra(self):
+    def accept_extra(self, description=None):
         """ Declares that extra arguments are ok. """
         self.accepts_extra = True
+        self.accepts_extra_description = description
 
     def add_flag(self, name, **args):
         if not 'default' in args:
@@ -108,12 +110,13 @@ class DecentParams(object):
         """
 
         try:
-            if False:
+#             if False:
+#                 if self.accepts_extra:
+#                     parser.add_argument('remainder', nargs=argparse.REMAINDER)
+#                 argparse_res, unknown = parser.parse_known_args(args)
+#             else:
                 if self.accepts_extra:
-                    parser.add_argument('remainder', nargs=argparse.REMAINDER)
-                argparse_res, unknown = parser.parse_known_args(args)
-            else:
-                parser.add_argument('remainder', nargs='*')
+                    parser.add_argument('remainder', nargs='*', help=self.accepts_extra_description)
                 argparse_res, unknown = parser.parse_known_intermixed_args(args)
 #                 print('argparse_res: %s' % argparse_res)
 #                 print('unknown: %s' % unknown)
@@ -189,6 +192,7 @@ class DecentParams(object):
 
     def create_parser(self, prog=None, usage=None, epilog=None,
                           description=None):
+        usage0 = usage
         def my_formatter(prog):
             return RawTextHelpFormatter(prog=prog,
                                         max_help_position=90, width=None)
@@ -197,8 +201,49 @@ class DecentParams(object):
 
             def error(self, msg):
                 raise DecentParamsUserError(self, msg)
+            
+            
+            def format_help(self):
+                formatter = self._get_formatter()
+        
+                def add_dash(s, char):
+                    dash = char* len(s)
+                    return '\n'.join((dash,s,dash))
+                        
+                s = "Documentation for the command '%s'" % self.prog
+                
+                formatter.add_text(add_dash(s, '='))
+                # first description
+                formatter.add_text(self.description)
+                formatter.add_text("\n")
+                
+#                 print('usage0: %r' % usage0)
+#                 print('usage: %r' % self.usage)
+#                 
+                if usage0 is not None:
+                    formatter.add_text(add_dash('Usage and examples', '-'))
 
-        parser = MyParser(prog=prog, usage=usage, epilog=epilog,
+                    formatter.add_text(usage0)
+
+                formatter.add_text(add_dash('Formal description of arguments', '-'))
+                
+                formatter.add_text(self.usage)
+            
+                # positionals, optionals and user-defined groups
+                for action_group in self._action_groups:
+                    formatter.start_section(action_group.title)
+                    formatter.add_text(action_group.description)
+                    formatter.add_arguments(action_group._group_actions)
+                    formatter.end_section()
+        
+                # epilog
+                formatter.add_text(self.epilog)
+        
+                # determine help from format above
+                return formatter.format_help()
+
+        # give None here
+        parser = MyParser(prog=prog, usage=None, epilog=epilog,
                                         description=description,
                                         formatter_class=my_formatter)
         self._populate_parser(option_container=parser, prog=prog)
@@ -286,14 +331,14 @@ def parse_known_intermixed_args(self, args=None, namespace=None, _fallback=None)
                 if hasattr(namespace, action.dest):
                     delattr(namespace, action.dest)
         except SystemExit:
-            warn('error from 1st parse_known_args')
+            # warn('error from 1st parse_known_args')
             raise
         finally:
             # restore nargs and usage before exiting
             for action in positionals:
                 action.nargs = action.save_nargs
             #self.usage = save_usage
-        logging.info('1st: %s,%s'%(namespace, remaining_args))
+        #logging.info('1st: %s,%s'%(namespace, remaining_args))
         # parse positionals
         # optionals aren't normally required, but just in case, turn that off
         optionals = self._get_optional_actions()
