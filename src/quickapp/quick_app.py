@@ -119,7 +119,15 @@ class QuickApp(QuickAppBase):
         if options.reset:
             if os.path.exists(output_dir):
                 self.logger.info('Removing output dir %r.' % output_dir)
-                shutil.rmtree(output_dir)
+                try:
+                    shutil.rmtree(output_dir)
+                except OSError as e:
+                    # Directory not empty -- common enough on NFS filesystems
+                    # print('errno: %r' % e.errno)
+                    if e.errno == 39:
+                        pass
+                    else:
+                        raise
 
         # Compmake storage for results
         storage = os.path.join(output_dir, 'compmake')
