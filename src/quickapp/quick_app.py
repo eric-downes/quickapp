@@ -1,23 +1,22 @@
 from abc import abstractmethod
-from compmake import CommandFailed, StorageFilesystem, read_rc_files
-from compmake.context import Context
-from compmake.exceptions import ShellExitRequested
-from compmake.jobs.uptodate import CacheQueryDB
 import os
 import shutil
 import sys
 import traceback
 
+from compmake import CommandFailed, StorageFilesystem, read_rc_files
+from compmake.context import Context
+from compmake.exceptions import ShellExitRequested
+from compmake.jobs.uptodate import CacheQueryDB
 from contracts import ContractsMeta, contract, indent
-import contracts
 from decent_params.utils import UserError, wrap_script_entry_point
 from quickapp import QUICKAPP_COMPUTATION_ERROR, logger
+import contracts
 
 from .compmake_context import CompmakeContext, context_get_merge_data
 from .exceptions import QuickAppException
 from .quick_app_base import QuickAppBase
 from .report_manager import _dynreports_create_index
-
 
 __all__ = [
     'QuickApp',
@@ -95,7 +94,6 @@ class QuickApp(QuickAppBase):
             # self.info('Parent not found')
             pass
 
-
         if False:
             import resource
             gbs = 5
@@ -104,7 +102,6 @@ class QuickApp(QuickAppBase):
             resource.setrlimit(resource.RLIMIT_DATA, (max_mem, -1))
 
         options = self.get_options()
-
 
         if self.get_qapp_parent() is None:
             # only do this if somebody didn't do it before
@@ -131,7 +128,7 @@ class QuickApp(QuickAppBase):
 
         # Compmake storage for results
         storage = os.path.join(output_dir, 'compmake')
-        db = StorageFilesystem(storage, compress=True)
+        db = StorageFilesystem(storage, compress=False)
         currently_executing = ['root']
         # The original Compmake context
         oc = Context(db=db, currently_executing=currently_executing)
@@ -170,7 +167,7 @@ class QuickApp(QuickAppBase):
                 cq = CacheQueryDB(oc.get_compmake_db())
                 targets = cq.all_jobs()
                 todo, done, ready = cq.list_todo_targets(targets)
-                
+
                 if not todo:
                     msg = "Note: there is nothing for me to do. "
                     msg += '\n(Jobs todo: %s done: %s ready: %s)' % (len(todo), len(done), len(ready))
@@ -182,12 +179,12 @@ class QuickApp(QuickAppBase):
                     msg += '\nTo inspect what was already done, use the option --console.'
                     self.warn(msg)
                     return 0
-            
+
                 if options.command is None:
                     command = 'make recurse=1'
                 else:
                     command = options.command
-                        
+
                 try:
                     _ = oc.batch_command(command)
                     #print('qapp: ret0 = %s'  % ret0)
@@ -200,9 +197,8 @@ class QuickApp(QuickAppBase):
                 else:
                     #print('qapp: else ret = 0')
                     ret = 0
-    
+
                 return ret
-                
 
     @contract(args='dict(str:*)|list(str)', extra_dep='list')
     def call_recursive(self, context, child_name, cmd_class, args,
