@@ -590,7 +590,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
         division = sections['division']
 
         f.write('<ul>')
-        sorted_values = natsorted(division.keys())
+        sorted_values = natsorted(list(division.keys()))
         for value in sorted_values:
             parents.append(value)
             html_id = "-".join(map(str, parents))
@@ -633,7 +633,7 @@ def make_sections(allruns, common=None):
     # print('Selecting %d with %s' % (len(allruns), common))
 
     if len(allruns) == 1:
-        key = allruns.keys()[0]
+        key = list(allruns.keys())[0]
         value = allruns[key]
         return dict(type='sample', common=common, key=key, value=value)
 
@@ -646,7 +646,7 @@ def make_sections(allruns, common=None):
     if not fields_size:
         # [frozendict({'i': 1, 'n': 3}), frozendict({'i': 2, 'n': 3}), frozendict({}), frozendict({'i': 0, 'n': 3})]
         msg = 'Not all records of the same type have the same fields'
-        msg += pformat(allruns.keys())
+        msg += pformat(list(allruns.keys()))
         raise ValueError(msg)
 
     field = fields_size[0][0]
@@ -679,7 +679,7 @@ def basename_from_key(key):
         that doesn't have special chars """
     if not key:
         raise ValueError('empty key')
-    keys_ordered = sorted(key.keys())
+    keys_ordered = sorted(list(key.keys()))
     values = []
     for k in keys_ordered:
         value = key[k]
