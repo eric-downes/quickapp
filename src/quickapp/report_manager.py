@@ -508,7 +508,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
     """)
 
     mtime = lambda x: os.path.getmtime(x)
-    existing = filter(lambda x: os.path.exists(x[1]), reports.items())
+    existing = list(filter(lambda x: os.path.exists(x[1]), reports.items()))
 
     # create order statistics
     alltimes = np.array([mtime(b) for _, b in existing])

@@ -152,7 +152,7 @@ def id_field_heuristics(generated):
     # print('all fields: %s' % fields)
 
     is_id_field = lambda x: x.startswith('id')
-    id_fields = filter(is_id_field, fields)
+    id_fields = list(filter(is_id_field, fields))
     if len(id_fields) != 1:
         # print('there are too many fields')
         return None
