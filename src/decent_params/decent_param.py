@@ -106,7 +106,7 @@ class DecentParamsResults(object):
         self._params = params
         self._extra = extra
 
-        for k, v in values.items():
+        for k, v in list(values.items()):
             self.__dict__[k] = v
 
     def __repr__(self):

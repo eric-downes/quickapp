@@ -249,7 +249,7 @@ def sort_by_type(allreports_filename):
         fields = xs.remove_field('report')
         # print(fields)
         res = StoreResults()
-        for k, v in fields.items():
+        for k, v in list(fields.items()):
             res[k] = v
         type2reports[report_type] = res
     return type2reports
@@ -263,7 +263,7 @@ def find_others(type2reports, key):
     del key['report']
 
     others = []
-    for other_type, other_type_reports in type2reports.items():
+    for other_type, other_type_reports in list(type2reports.items()):
         if other_type == report_type:
             continue
         best = get_most_similar(other_type_reports, key)
@@ -282,7 +282,7 @@ def get_most_similar(reports_different_type, key):
         return len(v1 & v2)
 
     keys = list(reports_different_type.keys())
-    scores = np.array(map(score, keys))
+    scores = np.array(list(map(score, keys)))
 
     tie = np.sum(scores == np.max(scores)) > 1
     if tie:
@@ -508,7 +508,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
     """)
 
     mtime = lambda x: os.path.getmtime(x)
-    existing = list(filter(lambda x: os.path.exists(x[1]), reports.items()))
+    existing = list([x for x in list(reports.items()) if os.path.exists(x[1])])
 
     # create order statistics
     alltimes = np.array([mtime(b) for _, b in existing])
@@ -531,7 +531,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
 
     @contract(k=dict, filename=str)
     def write_li(k, filename, element='li'):
-        desc = ",  ".join('%s = %s' % (a, b) for a, b in k.items())
+        desc = ",  ".join('%s = %s' % (a, b) for a, b in list(k.items()))
         href = os.path.relpath(os.path.realpath(filename),
                                os.path.dirname(os.path.realpath(index)))
         if os.path.exists(filename):
@@ -575,7 +575,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
     try:
         sections = make_sections(reports)
     except:
-        logger.error(str(reports.keys()))
+        logger.error(str(list(reports.keys())))
         raise
 
     if sections['type'] == 'sample':

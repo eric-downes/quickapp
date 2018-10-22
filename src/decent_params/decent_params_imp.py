@@ -145,7 +145,7 @@ class DecentParams(object):
     def _interpret_args2(self, parsed):
         values = dict()
         given = set()
-        for k, v in self.params.items():
+        for k, v in list(self.params.items()):
             # if v.compulsory and parsed[k] is None:
             if v.compulsory and (not k in parsed or parsed[k] is None):
                 msg = 'Compulsory option %r not given.' % k
@@ -177,7 +177,7 @@ class DecentParams(object):
         return values, list(given)
 
     def _populate_parser(self, option_container, prog=None):
-        groups = set(p.group for p in self.params.values())
+        groups = set(p.group for p in list(self.params.values()))
         for g in groups:
 
             if g is None:  # normal arguments:
@@ -186,7 +186,7 @@ class DecentParams(object):
                 title = str(g)
             description = None
             group = option_container.add_argument_group(title=title, description=description)
-            g_params = [p for p in self.params.values() if p.group == g]
+            g_params = [p for p in list(self.params.values()) if p.group == g]
             for p in g_params:
                 p.populate(group)
 
@@ -266,7 +266,7 @@ class DecentParams(object):
     @contract(config='dict(str:*)')
     def get_dpr_from_dict(self, config):
         args = []
-        for k,v in config.items():
+        for k,v in list(config.items()):
             args.append('--%s'%k)
             args.append(v)
         return self.get_dpr_from_args(args)
