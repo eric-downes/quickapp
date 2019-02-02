@@ -1,3 +1,5 @@
+import six
+
 from contracts import contract, describe_type, describe_value
 
 from decent_params import Choice
@@ -42,21 +44,21 @@ class DecentParam(object):
                  
     def value_from_string(self, s):
         """ Possibly returns Choice(options) """
-        print('%s %s' % (s, self.ptype))
+        # print('%s %s' % (s, self.ptype))
         sep = ','
-        if isinstance(s, str) and sep in s:
+        if isinstance(s, six.string_types) and sep in s:
             return Choice([self.value_from_string(x) 
                            for x in s.split(sep)])
         
-        if self.ptype == str:
-            return str(s)
+        if self.ptype in six.string_types:
+            return self.ptype(s)
         if self.ptype == float:
             return float(s)
         if self.ptype == int:
             return int(s)  # TODO: check
         if self.ptype == bool:
             res = bool(s)  # TODO: check
-            print('s %s -> %s' % (s, res))
+            # print('s %s -> %s' % (s, res))
             return res 
         msg = 'Unknown type %r' % self.ptype
         raise DecentParamsSemanticError(self.params, self, msg)
@@ -65,9 +67,14 @@ class DecentParam(object):
         expected = self.ptype
         if self.ptype == float:
             expected = (float, int)
+
+        if six.PY2:
+            if self.ptype is unicode:
+                if isinstance(x, six.string_types):
+                    return
             
         if not isinstance(x, expected):
-            msg = ("For param %r, expected %s, got %s.\n%s" % 
+            msg = ("For param '%s', expected %s, got %s.\n%s" %
                     (self.name, self.ptype, describe_type(x),
                      describe_value(x)))
             raise DecentParamsSemanticError(self.params, self, msg)

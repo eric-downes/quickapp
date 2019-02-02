@@ -5,6 +5,8 @@ from gettext import gettext as _
 import logging
 from pprint import pformat
 
+import six
+
 from contracts import contract
 from decent_params import Choice
 
@@ -46,7 +48,11 @@ class DecentParams(object):
         self._add(DecentParamFlag(ptype=bool, name=name, **args))
 
     def add_string(self, name, **args):
-        self._add(DecentParam(ptype=str, name=name, **args))
+        if six.PY2:
+            S = unicode
+        else:
+            S = str
+        self._add(DecentParam(ptype=S, name=name, **args))
 
     def add_float(self, name, **args):
         self._add(DecentParam(ptype=float, name=name, **args))

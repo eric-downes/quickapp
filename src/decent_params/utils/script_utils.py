@@ -52,7 +52,7 @@ def wrap_script_entry_point_noexit(function, logger,
         return ret
     except exceptions_no_traceback as e:
         # print('no traceback')
-        logger.error(str(e))
+        logger.error(e)
         return 1
     except Exception as e:
         # print('normal exception')
