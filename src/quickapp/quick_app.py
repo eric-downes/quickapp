@@ -101,13 +101,13 @@ class QuickApp(QuickAppBase):
 
         options = self.get_options()
 
-        if self.get_qapp_parent() is None:
-            # only do this if somebody didn't do it before
-            if not options.contracts:
-                msg = ('PyContracts disabled for speed. '
-                       'Use --contracts to activate.')
-                self.logger.warning(msg)
-                contracts.disable_all()
+        # if self.get_qapp_parent() is None:
+        # only do this if somebody didn't do it before
+        if not options.contracts:
+            msg = ('PyContracts disabled for speed. '
+                   'Use --contracts to activate.')
+            self.logger.warning(msg)
+            contracts.disable_all()
 
         output_dir = options.output
 
