@@ -7,7 +7,7 @@
 all: develop
 
 develop:
-	python setup.py develop
+	python3 setup.py develop
 
 docs: 
 	make -C docs
