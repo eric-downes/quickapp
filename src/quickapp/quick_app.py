@@ -148,10 +148,11 @@ class QuickApp(QuickAppBase):
         has_reports = len(qc.get_report_manager().allreports) > 0
         has_branched = qc.has_branched()
         if has_reports or has_branched:
-            self.info('Creating reports')
+            # self.info('Creating reports')
             oc.comp_dynamic(_dynreports_create_index, merged)
         else:
-            self.info('Not creating reports.')
+            pass
+            # self.info('Not creating reports.')
 
         ndefined = len(oc.get_jobs_defined_in_this_session())
         if ndefined == 0:
