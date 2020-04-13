@@ -10,6 +10,7 @@ from compmake.context import Context
 from compmake.exceptions import ShellExitRequested
 from compmake.jobs.uptodate import CacheQueryDB
 from contracts import ContractsMeta, contract, indent
+from decent_params import DecentParams
 from decent_params.utils import UserError, wrap_script_entry_point
 from quickapp import QUICKAPP_COMPUTATION_ERROR, logger
 
@@ -35,7 +36,7 @@ class QuickApp(QuickAppBase):
         """ Define jobs in the current context. """
 
     @abstractmethod
-    def define_options(self, params):
+    def define_options(self, params: DecentParams):
         """ Define options for the application. """
 
     # Implementation

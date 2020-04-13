@@ -4,6 +4,7 @@ import sys
 import traceback
 from abc import abstractmethod
 from pprint import pformat
+from typing import List
 
 from conf_tools.utils import indent
 from contracts import contract, describe_value, ContractsMeta
@@ -21,11 +22,11 @@ __all__ = [
 class QuickAppBase(HasLogger):
     """
         class attributes used:
-        
+
             cmd
             usage
-            description (deprecated) => use docstring 
-    
+            description (deprecated) => use docstring
+
     """
     __metaclass__ = ContractsMeta
 
@@ -58,9 +59,9 @@ class QuickAppBase(HasLogger):
     @abstractmethod
     @contract(returns='None|int')
     def go(self):
-        """ 
-            Must be implemented. This should return either None to mean success, 
-            or an integer error code. 
+        """
+            Must be implemented. This should return either None to mean success,
+            or an integer error code.
         """
 
     @classmethod
@@ -80,7 +81,7 @@ class QuickAppBase(HasLogger):
 
     @classmethod
     def get_program_description(cls):
-        """     
+        """
             Returns a description for the program. This is by default
             looked in the docstring or in the "description" attribute
             (deprecated).
@@ -106,7 +107,7 @@ class QuickAppBase(HasLogger):
 
     @classmethod
     def get_usage(cls):
-        """     
+        """
             Returns an usage string for the program. The pattern ``%prog``
             will be substituted with the name of the program.
         """
@@ -119,16 +120,16 @@ class QuickAppBase(HasLogger):
 
     @classmethod
     def get_epilog(cls):
-        """     
-            Returns the string used as an epilog in the help text. 
+        """
+            Returns the string used as an epilog in the help text.
         """
         return None
 
     @classmethod
     def get_prog_name(cls):
-        """     
+        """
             Returns the string used as the program name. By default
-            it is contained in the ``cmd`` attribute. 
+            it is contained in the ``cmd`` attribute.
         """
         if not 'cmd' in cls.__dict__:
             return os.path.basename(sys.argv[0])
@@ -189,7 +190,7 @@ class QuickAppBase(HasLogger):
     def set_options_from_dict(self, config):
         """
             Reads the configuration from a dictionary.
-        
+
             raises: UserError: Wrong configuration, user's mistake.
                     Exception: all other exceptions
         """
@@ -212,11 +213,11 @@ class QuickAppBase(HasLogger):
             msg += indent(traceback.format_exc(), '> ')
             raise QuickAppException(msg)  # XXX class
 
-    @contract(args='list(str)')
-    def set_options_from_args(self, args):
+
+    def set_options_from_args(self, args: List[str]):
         """
-            Reads the configuration from command line arguments. 
-            
+            Reads the configuration from command line arguments.
+
             raises: UserError: Wrong configuration, user's mistake.
                     Exception: all other exceptions
         """

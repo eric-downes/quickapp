@@ -1,13 +1,13 @@
-import six
 import os
+from typing import List
+
+import six
 
 from compmake import Context, Promise
 from compmake.context import load_static_storage
 from conf_tools import GlobalConfig
-from contracts import check_isinstance
-from contracts import contract, describe_type
+from contracts import check_isinstance, contract, describe_type
 from contracts.utils import raise_wrapped
-
 from .report_manager import ReportManager
 from .resource_manager import ResourceManager
 
@@ -19,9 +19,9 @@ __all__ = [
 
 class QuickAppContext(object):
 
-    @contract(extra_dep='list', cc=Context)
-    def __init__(self, cc, qapp, parent, job_prefix,
-                 output_dir, extra_dep=[], resource_manager=None,
+    # @contract(extra_dep='list', cc=Context)
+    def __init__(self, cc: Context, qapp, parent, job_prefix,
+                 output_dir, extra_dep: List = [], resource_manager=None,
                  extra_report_keys=None,
                  report_manager=None):
         check_isinstance(cc, Context)
@@ -68,8 +68,7 @@ class QuickAppContext(object):
     def all_jobs_dict(self):
         return dict(self._jobs)
 
-    @contract(job_name='str', returns=Promise)
-    def checkpoint(self, job_name):
+    def checkpoint(self, job_name: str) -> Promise:
         """
 
             (DEPRECATED)
@@ -90,8 +89,7 @@ class QuickAppContext(object):
     #
     # Wrappers form Compmake's "comp".
     #
-    @contract(returns=Promise)
-    def comp(self, f, *args, **kwargs):
+    def comp(self, f, *args, **kwargs) -> Promise:
         """
             Simple wrapper for Compmake's comp function.
             Use this instead of "comp".
@@ -109,8 +107,7 @@ class QuickAppContext(object):
         self._jobs[promise.job_id] = promise
         return promise
 
-    @contract(returns=Promise)
-    def comp_dynamic(self, f, *args, **kwargs):
+    def comp_dynamic(self, f, *args, **kwargs) -> Promise:
         # XXX: we really dont need it
         context = self._get_promise()
         # context = self
@@ -129,16 +126,15 @@ class QuickAppContext(object):
         #:arg:command_name: used to define job name if job_id not provided.
 
         both = self.cc.comp_dynamic(_dynreports_wrap_dynamic, qc=context,
-                             function=f, args=args, kw=kwargs,
-                             **compmake_args)
+                                    function=f, args=args, kw=kwargs,
+                                    **compmake_args)
 
         result = self.comp(_dynreports_getres, both)
         data = self.comp(_dynreports_getbra, both)
         self.branched_contexts.append(data)
         return result
 
-    @contract(returns=Promise)
-    def comp_config(self, f, *args, **kwargs):
+    def comp_config(self, f, *args, **kwargs) -> Promise:
         """
             Like comp, but we also automatically save the GlobalConfig state.
         """
@@ -148,8 +144,7 @@ class QuickAppContext(object):
             kwargs['command_name'] = f.__name__
         return self.comp(wrap_state, config_state, f, *args, **kwargs)
 
-    @contract(returns=Promise)
-    def comp_config_dynamic(self, f, *args, **kwargs):
+    def comp_config_dynamic(self, f, *args, **kwargs) -> Promise:
         """ Defines jobs that will take a "context" argument to define
             more jobs. """
         config_state = GlobalConfig.get_state()
@@ -171,14 +166,13 @@ class QuickAppContext(object):
 
         return self._output_dir
 
-    @contract(extra_dep='list', name=str)
-    def child(self, name, qapp=None,
+    def child(self, name:str, qapp=None,
               add_job_prefix=None,
               add_outdir=None,
-              extra_dep=[],
+              extra_dep: list=[],
               extra_report_keys=None,
               separate_resource_manager=False,
-              separate_report_manager=False):
+              separate_report_manager=False) -> "QuickAppContext":
         """
             Returns child context
 
@@ -241,13 +235,13 @@ class QuickAppContext(object):
             extra_report_keys_.update(extra_report_keys)
 
         c1 = CompmakeContext(cc=self.cc,
-                            qapp=qapp, parent=self,
-                            job_prefix=job_prefix,
-                            report_manager=report_manager,
-                            resource_manager=resource_manager,
-                            extra_report_keys=extra_report_keys_,
-                            output_dir=output_dir,
-                            extra_dep=_extra_dep)
+                             qapp=qapp, parent=self,
+                             job_prefix=job_prefix,
+                             report_manager=report_manager,
+                             resource_manager=resource_manager,
+                             extra_report_keys=extra_report_keys_,
+                             output_dir=output_dir,
+                             extra_dep=_extra_dep)
         self.branched_children.append(c1)
         return c1
 
@@ -259,10 +253,10 @@ class QuickAppContext(object):
 
     @contract(extra_dep='list')
     def subtask(self, task, extra_dep=[], add_job_prefix=None, add_outdir=None,
-                    separate_resource_manager=False,
-                    separate_report_manager=False,
-                    extra_report_keys=None,
-                    **task_config):
+                separate_resource_manager=False,
+                separate_report_manager=False,
+                extra_report_keys=None,
+                **task_config):
         return self._qapp.call_recursive(context=self, child_name=task.cmd,
                                          cmd_class=task, args=task_config,
                                          extra_dep=extra_dep,
@@ -313,8 +307,8 @@ class QuickAppContext(object):
     def _get_promise(self):
         """ Returns the promise object representing this context. """
         if self._promise is None:
-            #warnings.warn('Need IDs for contexts, using job_prefix.')
-            #warnings.warn('XXX: Note that this sometimes creates a context '
+            # warnings.warn('Need IDs for contexts, using job_prefix.')
+            # warnings.warn('XXX: Note that this sometimes creates a context '
             #              'with depth 1; then "delete not root" deletes it.')
             self._promise_job_id = 'context'
             self._promise = self.comp(load_static_storage, self,
@@ -406,4 +400,3 @@ def context_get_merge_data(context):
 
 
 CompmakeContext = QuickAppContext
-
