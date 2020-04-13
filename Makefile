@@ -2,8 +2,10 @@ package=quickapp
 
 include pypackage.mk
 
-bump-upload:
+bump:
 	bumpversion patch
+
+upload:
 	git push --tags
 	git push --all
 	rm -f dist/*
@@ -11,6 +13,9 @@ bump-upload:
 	python setup.py sdist
 	twine upload dist/*
 
+bump-upload:
+	$(MAKE) bump
+	$(MAKE) upload
 
 name=quickapp-python3
 
