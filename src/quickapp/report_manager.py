@@ -63,9 +63,9 @@ class ReportManager(object):
             self.allreports_filename[key] = filename
 
     def set_html_resources_prefix(self, prefix):
-        """ 
+        """
             Sets the prefix for the resources filename.
-        
+
             example: set_resources_prefix('jbds')
         """
         self.html_resources_prefix = prefix + '-'
@@ -90,7 +90,7 @@ class ReportManager(object):
     def add(self, context, report, report_type, **kwargs):
         """
             Adds a report to the collection.
-            
+
             :param report: Promise of a Report object
             :param report_type: A string that describes the "type" of the report
             :param kwargs:  str->str,int,float  parameters used for grouping
@@ -480,9 +480,9 @@ def write_report(report, report_html, static_dir, write_pickle=False, **kwargs):
 @contract(reports=StoreResults, index=str)
 def index_reports(reports, index, update=None):  # @UnusedVariable
     """
-        Writes an index for the report to the file given. 
+        Writes an index for the report to the file given.
         The special key "report" gives the report type.
-        
+
         report[dict(report=...,param1=..., param2=...) ] => filename
     """
     # print('Updating because of new report %s' % update)
@@ -564,7 +564,7 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
             f.write('<ul>')
             r = reports.select(report=report_type)
             items = list(r.items())
-            items.sort(key=lambda x: str(x[0]))  # XXX use natsort   
+            items.sort(key=lambda x: str(x[0]))  # XXX use natsort
             for k, filename in items:
                 write_li(k, filename)
 
@@ -673,9 +673,8 @@ def _dynreports_create_index(context, merged_data):
     rm.create_index_job(context)
 
 
-@contract(key=dict, returns='str')
-def basename_from_key(key):
-    """ Returns a nice basename from a key 
+def basename_from_key(key:dict)->str:
+    """ Returns a nice basename from a key
         that doesn't have special chars """
     if not key:
         raise ValueError('empty key')
