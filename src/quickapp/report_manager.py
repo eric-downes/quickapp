@@ -1,17 +1,18 @@
 import os
 import time
 from pprint import pformat
-import six
-import numpy as np
-from compmake import Context, Promise
-from compmake.utils import duration_compact
-from conf_tools.utils import friendly_path
-from contracts import contract, describe_type, describe_value
-from quickapp import logger
-from reprep import Report
-from reprep.report_utils import StoreResults
-from reprep.utils import frozendict2, natsorted
 
+import numpy as np
+
+from compmake import Context, Promise
+from zuper_commons.ui import duration_compact
+from conf_tools.utils import friendly_path
+from zuper_commons.types import check_isinstance, describe_type, describe_value
+from reprep import Report
+
+from reprep.utils import frozendict2
+from zuper_commons.text import natsorted
+from . import logger
 from .rm import write_report_single
 
 __all__ = [
@@ -19,7 +20,7 @@ __all__ = [
 ]
 
 
-class ReportManager(object):
+class ReportManager:
 
     def __init__(self, context, outdir, index_filename=None):
         # TODO: remove context
@@ -28,6 +29,7 @@ class ReportManager(object):
         if index_filename is None:
             index_filename = os.path.join(self.outdir, 'report_index.html')
         self.index_filename = index_filename
+        from reprep.report_utils import StoreResults
         self.allreports = StoreResults()
         self.allreports_filename = StoreResults()
 
@@ -41,7 +43,7 @@ class ReportManager(object):
 
         self.static_dir = os.path.join(self.outdir, 'reprep-static')
 
-    def merge(self, other):
+    def merge(self, other: "ReportManager") -> None:
         assert isinstance(other, ReportManager)
         """ Merges into this scructure the data from another reportmanager. """
         # print('I have: %d reports' % len(self.allreports))
@@ -86,8 +88,7 @@ class ReportManager(object):
         key = frozendict2(report=report_type, **kwargs)
         return self.allreports[key]
 
-    @contract(report_type='str')
-    def add(self, context, report, report_type, **kwargs):
+    def add(self, context, report, report_type: str, **kwargs):
         """
             Adds a report to the collection.
 
@@ -97,7 +98,7 @@ class ReportManager(object):
         """
         from quickapp.compmake_context import CompmakeContext
         assert isinstance(context, CompmakeContext)
-        if not isinstance(report_type, six.string_types):
+        if not isinstance(report_type, str):
             msg = 'Need a string for report_type, got %r.' % describe_value(report_type)
             raise ValueError(msg)
 
@@ -161,8 +162,8 @@ class ReportManager(object):
                              static_dir=self.static_dir,
                              job_id=write_job_id)
 
-    @contract(context=Context)
-    def create_index_job(self, context):
+    # @contract(context=Context)
+    def create_index_job(self, context: Context):
         if self.index_job_created:
             msg = 'create_index_job() was already called once'
             raise ValueError(msg)
@@ -248,6 +249,7 @@ def sort_by_type(allreports_filename):
     for report_type, xs in allreports_filename.groups_by_field_value('report'):
         fields = xs.remove_field('report')
         # print(fields)
+        from reprep.report_utils import StoreResults
         res = StoreResults()
         for k, v in list(fields.items()):
             res[k] = v
@@ -289,14 +291,15 @@ def get_most_similar(reports_different_type, key):
         # print('there is a tie: %s,\n %s' % (key, keys))
         return None
 
-    best = keys[np.argmax(scores)]
+    i = int(np.argmax(scores))
+    best = keys[i]
 
     return best
 
 
-@contract(other_reports_same_type=StoreResults)
 def create_links_html(this_report, other_reports_same_type, index_filename,
                       most_similar_other_type):
+    check_isinstance(other_reports_same_type, 'StoreResults')
     '''
     :param this_report: dictionary with the keys describing the report
     :param other_reports_same_type: StoreResults -> filename
@@ -398,7 +401,7 @@ def create_links_html(this_report, other_reports_same_type, index_filename,
     return s
 
 
-@contract(returns="list( tuple(str, *))", other_reports_same_type=StoreResults)
+# @contract(returns="list( tuple(str, *))", other_reports_same_type=StoreResults)
 def create_links_html_table(this_report, other_reports_same_type):
     # Iterate over all keys (each key gets a column)
 
@@ -432,7 +435,7 @@ def create_links_html_table(this_report, other_reports_same_type):
     return cols
 
 
-@contract(report=Report, report_nid='str', other_reports_same_type=StoreResults)
+# @contract(report=Report, report_nid='str', other_reports_same_type=StoreResults)
 def write_report_and_update(report, report_nid, report_html, all_reports, index_filename,
                             this_report,
                             other_reports_same_type,
@@ -459,7 +462,7 @@ def write_report_and_update(report, report_nid, report_html, all_reports, index_
     index_reports(reports=all_reports, index=index_filename, update=html)
 
 
-@contract(report=Report, report_html='str')
+# @contract(report=Report, report_html='str')
 def write_report(report, report_html, static_dir, write_pickle=False, **kwargs):
     logger.debug('Writing to %s ' % friendly_path(report_html))
     #     if False:
@@ -477,7 +480,7 @@ def write_report(report, report_html, static_dir, write_pickle=False, **kwargs):
     return report_html
 
 
-@contract(reports=StoreResults, index=str)
+# @contract(reports=StoreResults, index=str)
 def index_reports(reports, index, update=None):  # @UnusedVariable
     """
         Writes an index for the report to the file given.
@@ -529,8 +532,8 @@ def index_reports(reports, index, update=None):  # @UnusedVariable
             return "color: gray;"
         return ""
 
-    @contract(k=dict, filename=str)
-    def write_li(k, filename, element='li'):
+    # @contract(k=dict, filename=str)
+    def write_li(k, filename: str, element='li'):
         desc = ",  ".join('%s = %s' % (a, b) for a, b in list(k.items()))
         href = os.path.relpath(os.path.realpath(filename),
                                os.path.dirname(os.path.realpath(index)))
@@ -673,7 +676,7 @@ def _dynreports_create_index(context, merged_data):
     rm.create_index_job(context)
 
 
-def basename_from_key(key:dict)->str:
+def basename_from_key(key: dict) -> str:
     """ Returns a nice basename from a key
         that doesn't have special chars """
     if not key:

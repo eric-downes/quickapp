@@ -4,13 +4,12 @@ import sys
 import traceback
 from abc import abstractmethod
 from pprint import pformat
-from typing import List
+from typing import Any, Dict, List, Optional
 
-from conf_tools.utils import indent
-from contracts import contract, describe_value, ContractsMeta
-from decent_params import DecentParams, UserError, DecentParamsUserError
+# from contracts import contract, ContractsMeta, describe_value
+from decent_params import DecentParams, DecentParamsResults, DecentParamsUserError, UserError
 from quickapp import logger
-
+from zuper_commons.text import indent
 from .exceptions import QuickAppException
 from .utils import HasLogger
 
@@ -28,7 +27,8 @@ class QuickAppBase(HasLogger):
             description (deprecated) => use docstring
 
     """
-    __metaclass__ = ContractsMeta
+    # __metaclass__ = ContractsMeta
+    options: DecentParamsResults
 
     def __init__(self, parent=None):
         HasLogger.__init__(self)
@@ -57,8 +57,7 @@ class QuickAppBase(HasLogger):
         pass
 
     @abstractmethod
-    @contract(returns='None|int')
-    def go(self):
+    def go(self) -> Optional[int]:
         """
             Must be implemented. This should return either None to mean success,
             or an integer error code.
@@ -147,8 +146,8 @@ class QuickAppBase(HasLogger):
             assert self.parent != self
         return self.parent
 
-    @contract(args='None|list(str)', returns=int)
-    def main(self, args=None, parent=None):
+    # @contract(args='None|list(str)', returns=int)
+    def main(self, args: Optional[List[str]]=None, parent=None) -> int:
         """ Main entry point. Returns an integer as an error code. """
 
         if "short" in type(self).__dict__:
@@ -183,11 +182,10 @@ class QuickAppBase(HasLogger):
         if isinstance(ret, int):
             return ret
         else:
-            msg = 'Expected None or an integer fomr self.go(), got %s' % describe_value(ret)
+            msg = f'Expected None or an integer fomr self.go(), got {ret}'
             raise ValueError(msg)
 
-    @contract(config='dict(str:*)')
-    def set_options_from_dict(self, config):
+    def set_options_from_dict(self, config: Dict[str, Any]):
         """
             Reads the configuration from a dictionary.
 
@@ -212,7 +210,6 @@ class QuickAppBase(HasLogger):
             #             else:
             msg += indent(traceback.format_exc(), '> ')
             raise QuickAppException(msg)  # XXX class
-
 
     def set_options_from_args(self, args: List[str]):
         """

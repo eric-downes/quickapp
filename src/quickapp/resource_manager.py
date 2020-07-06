@@ -1,51 +1,52 @@
 from collections import defaultdict
 import traceback
 
-from contracts import contract, describe_type
+# from contracts import contract, describe_type
 
 from compmake import Promise
 from conf_tools.utils import check_is_in, indent
-from reprep.report_utils import StoreResults
+
 
 
 __all__ = ['ResourceManager']
 
 
-class ResourceManager(object):
+class ResourceManager:
     class CannotProvide(Exception):
         pass
 
     def __init__(self, context):
         from quickapp.compmake_context import CompmakeContext
         assert isinstance(context, CompmakeContext), context
+        from reprep.report_utils import StoreResults
         self.allresources = StoreResults()
         self.providers = defaultdict(list)  # rtype => list of providers
         self.make_prefix = {}  # rtype => function to make prefix
         self._context = context
 
-    @contract(rtype='str')
-    def set_resource_provider(self, rtype, provider):
+    # @contract(rtype='str')
+    def set_resource_provider(self, rtype: str, provider):
         """
-            provider: any callable. It will be called with "context" as first 
+            provider: any callable. It will be called with "context" as first
                 argument, and with any remaining params. It needs to return
-                a Compmake Promise() object (i.e. the output of comp()). 
-                
+                a Compmake Promise() object (i.e. the output of comp()).
+
         """
         self.providers[rtype].append(provider)
 
     def set_resource_prefix_function(self, rtype, make_prefix):
         """
-            make_prefix: a function that takes (rtype, **params) and 
+            make_prefix: a function that takes (rtype, **params) and
             returns a string.
         """
         self.make_prefix[rtype] = make_prefix
 
-    @contract(rtype='str')
-    def get_resource(self, rtype, **params):
+    # @contract(rtype='str')
+    def get_resource(self, rtype: str, **params):
         return self.get_resource_job(self._context, rtype, **params)
 
-    @contract(rtype='str')
-    def get_resource_job(self, context, rtype, **params):
+    # @contract(rtype='str')
+    def get_resource_job(self, context, rtype: str, **params):
         # print('RM %s %s get_resource %s %s' % (id(self), self._context, rtype, params))
         key = dict(rtype=rtype, **params)
         already_done = key in self.allresources
@@ -107,15 +108,15 @@ class ResourceManager(object):
         prefix = "-".join(alls)
         return prefix
 
-    @contract(rtype='str')
-    def set_resource(self, goal, rtype, **params):
+    # @contract(rtype='str')
+    def set_resource(self, goal, rtype: str, **params):
         key = dict(rtype=rtype, **params)
         if not isinstance(goal, Promise):
             msg = 'Warning, resource did not return a Compmake Promise.'
             msg += '\n  key: %s' % key
-            msg += '\n type: %s' % describe_type(goal)
+            msg += '\n type: %s' % type(goal)
             # logger.error(msg)
             raise ValueError(msg)
 
         self.allresources[key] = goal
-         
+

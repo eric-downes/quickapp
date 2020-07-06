@@ -1,22 +1,18 @@
-from argparse import ArgumentParser, PARSER, REMAINDER, ArgumentError
-from argparse import RawTextHelpFormatter
 import argparse
-from gettext import gettext as _
 import logging
+from argparse import ArgumentError, ArgumentParser, PARSER, RawTextHelpFormatter, REMAINDER
+from gettext import gettext as _
 from pprint import pformat
+from typing import Any, Dict, List, Tuple
 
-import six
-
-from contracts import contract
 from decent_params import Choice
-
 from .decent_param import (DecentParam, DecentParamChoice, DecentParamFlag,
                            DecentParamMultiple, DecentParamsResults)
 from .exceptions import (DecentParamsDefinitionError, DecentParamsUnknownArgs,
                          DecentParamsUserError)
 
-
 __all__ = ['DecentParams']
+
 
 class DecentParams(object):
 
@@ -48,10 +44,7 @@ class DecentParams(object):
         self._add(DecentParamFlag(ptype=bool, name=name, **args))
 
     def add_string(self, name, **args):
-        if six.PY2:
-            S = unicode
-        else:
-            S = str
+        S = str
         self._add(DecentParam(ptype=S, name=name, **args))
 
     def add_float(self, name, **args):
@@ -88,8 +81,8 @@ class DecentParams(object):
         res = DecentParamsResults(values, given, self.params)
         return res
 
-    @contract(args='list(str)', returns='tuple(dict, list(str))')
-    def parse_using_parser(self, parser, args):
+    # @contract(args='list(str)', returns='tuple(dict, list(str))')
+    def parse_using_parser(self, parser, args: List[str]) -> Tuple[Dict, List[str]]:
         """
             Returns a dictionary with all values of parameters,
             but possibly some values are Choice() instances.
@@ -107,8 +100,8 @@ class DecentParams(object):
         values, given = self._interpret_args(argparse_res)
         return values, given
 
-    @contract(args='list(str)', returns='tuple(dict, list(str), list(str))')
-    def parse_using_parser_extra(self, parser, args):
+    # @contract(args='list(str)', returns='tuple(dict, list(str), list(str))')
+    def parse_using_parser_extra(self, parser, args: List[str]) -> Tuple[Dict, List[str], List[str]]:
         """
             This returns also the extra parameters
 
@@ -116,16 +109,16 @@ class DecentParams(object):
         """
 
         try:
-#             if False:
-#                 if self.accepts_extra:
-#                     parser.add_argument('remainder', nargs=argparse.REMAINDER)
-#                 argparse_res, unknown = parser.parse_known_args(args)
-#             else:
-                if self.accepts_extra:
-                    parser.add_argument('remainder', nargs='*', help=self.accepts_extra_description)
-                argparse_res, unknown = parser.parse_known_intermixed_args(args)
-#                 print('argparse_res: %s' % argparse_res)
-#                 print('unknown: %s' % unknown)
+            #             if False:
+            #                 if self.accepts_extra:
+            #                     parser.add_argument('remainder', nargs=argparse.REMAINDER)
+            #                 argparse_res, unknown = parser.parse_known_args(args)
+            #             else:
+            if self.accepts_extra:
+                parser.add_argument('remainder', nargs='*', help=self.accepts_extra_description)
+            argparse_res, unknown = parser.parse_known_intermixed_args(args)
+        #                 print('argparse_res: %s' % argparse_res)
+        #                 print('unknown: %s' % unknown)
         except SystemExit:
             raise  # XXX
 
@@ -139,16 +132,16 @@ class DecentParams(object):
 
         values, given = self._interpret_args(argparse_res)
         # TODO: raise if extra is given
-        
-#         print('extra: %r' % extra)
+
+        #         print('extra: %r' % extra)
         return values, given, extra
 
     def _interpret_args(self, argparse_res):
         parsed = vars(argparse_res)
         return self._interpret_args2(parsed)
 
-    @contract(parsed='dict', returns='tuple(dict, list(str))')
-    def _interpret_args2(self, parsed):
+    # @contract(parsed='dict', returns='tuple(dict, list(str))')
+    def _interpret_args2(self, parsed: Dict) -> Tuple[Dict, List[str]]:
         values = dict()
         given = set()
         for k, v in list(self.params.items()):
@@ -157,7 +150,7 @@ class DecentParams(object):
                 msg = 'Compulsory option %r not given.' % k
                 raise DecentParamsUserError(self, msg)
 
-            #warnings.warn('Not sure below')
+            # warnings.warn('Not sure below')
             # if parsed[k] is not None:
             if k in parsed and parsed[k] is not None:
                 if parsed[k] != self.params[k].default:
@@ -197,8 +190,9 @@ class DecentParams(object):
                 p.populate(group)
 
     def create_parser(self, prog=None, usage=None, epilog=None,
-                          description=None):
+                      description=None):
         usage0 = usage
+
         def my_formatter(prog):
             return RawTextHelpFormatter(prog=prog,
                                         max_help_position=90, width=None)
@@ -207,59 +201,57 @@ class DecentParams(object):
 
             def error(self, msg):
                 raise DecentParamsUserError(self, msg)
-            
-            
+
             def format_help(self):
                 formatter = self._get_formatter()
-        
+
                 def add_dash(s, char):
-                    dash = char* len(s)
-                    return '\n'.join((dash,s,dash))
-                        
+                    dash = char * len(s)
+                    return '\n'.join((dash, s, dash))
+
                 s = "Documentation for the command '%s'" % self.prog
-                
+
                 formatter.add_text(add_dash(s, '='))
                 # first description
                 formatter.add_text(self.description)
                 formatter.add_text("\n")
-                
-#                 print('usage0: %r' % usage0)
-#                 print('usage: %r' % self.usage)
-#                 
+
+                #                 print('usage0: %r' % usage0)
+                #                 print('usage: %r' % self.usage)
+                #
                 if usage0 is not None:
                     formatter.add_text(add_dash('Usage and examples', '-'))
 
                     formatter.add_text(usage0)
 
                 formatter.add_text(add_dash('Formal description of arguments', '-'))
-                
+
                 formatter.add_text(self.usage)
-            
+
                 # positionals, optionals and user-defined groups
                 for action_group in self._action_groups:
                     formatter.start_section(action_group.title)
                     formatter.add_text(action_group.description)
                     formatter.add_arguments(action_group._group_actions)
                     formatter.end_section()
-        
+
                 # epilog
                 formatter.add_text(self.epilog)
-        
+
                 # determine help from format above
                 return formatter.format_help()
 
         # give None here
         parser = MyParser(prog=prog, usage=None, epilog=epilog,
-                                        description=description,
-                                        formatter_class=my_formatter)
+                          description=description,
+                          formatter_class=my_formatter)
         self._populate_parser(option_container=parser, prog=prog)
         return parser
 
-
-    @contract(args='list(str)')
-    def get_dpr_from_args(self, args, prog=None, usage=None, epilog=None,
+    # @contract(args='list(str)')
+    def get_dpr_from_args(self, args: List[str], prog=None, usage=None, epilog=None,
                           description=None):
-        parser = self.create_parser(prog=prog, usage=usage, 
+        parser = self.create_parser(prog=prog, usage=usage,
                                     epilog=epilog, description=description)
 
         values, given, extra = self.parse_using_parser_extra(parser, args)
@@ -269,19 +261,22 @@ class DecentParams(object):
         dpr = DecentParamsResults(values, given, self, extra=extra)
         return dpr
 
-    @contract(config='dict(str:*)')
-    def get_dpr_from_dict(self, config):
+    # @contract(config='dict(str:*)')
+    def get_dpr_from_dict(self, config: Dict[str, Any]):
         args = []
-        for k,v in list(config.items()):
-            args.append('--%s'%k)
+        for k, v in list(config.items()):
+            args.append('--%s' % k)
             args.append(v)
         return self.get_dpr_from_args(args)
 
 
 # from warnings import warn
 logging.basicConfig(format='%(levelname)s: Intermix: %(message)s')
+
+
 def warn(message):
     logging.warning(message)
+
 
 def parse_intermixed_args(self, args=None, namespace=None):
     args, argv = self.parse_known_intermixed_args(args, namespace)
@@ -304,12 +299,12 @@ def parse_known_intermixed_args(self, args=None, namespace=None, _fallback=None)
     # positionals 'deactivated' by setting nargs=0
 
     positionals = self._get_positional_actions()
-    
+
     a = [action for action in positionals if action.nargs in [PARSER, REMAINDER]]
     if a:
         if _fallback is None:
             a = a[0]
-            err = ArgumentError(a, 'parse_intermixed_args: positional arg with nargs=%s'%a.nargs)
+            err = ArgumentError(a, 'parse_intermixed_args: positional arg with nargs=%s' % a.nargs)
             self.error(str(err))
         else:
             return _fallback(args, namespace)
@@ -343,8 +338,8 @@ def parse_known_intermixed_args(self, args=None, namespace=None, _fallback=None)
             # restore nargs and usage before exiting
             for action in positionals:
                 action.nargs = action.save_nargs
-            #self.usage = save_usage
-        #logging.info('1st: %s,%s'%(namespace, remaining_args))
+            # self.usage = save_usage
+        # logging.info('1st: %s,%s'%(namespace, remaining_args))
         # parse positionals
         # optionals aren't normally required, but just in case, turn that off
         optionals = self._get_optional_actions()
@@ -368,6 +363,7 @@ def parse_known_intermixed_args(self, args=None, namespace=None, _fallback=None)
     finally:
         self.usage = save_usage
     return namespace, extras
+
 
 ArgumentParser.parse_intermixed_args = parse_intermixed_args
 ArgumentParser.parse_known_intermixed_args = parse_known_intermixed_args

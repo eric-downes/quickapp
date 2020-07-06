@@ -1,15 +1,16 @@
 import os
-from typing import List
+from typing import List, TypeVar, Callable
 
 import six
 
 from compmake import Context, Promise
 from compmake.context import load_static_storage
 from conf_tools import GlobalConfig
-from contracts import check_isinstance, contract, describe_type
+from contracts import  contract, describe_type
 from contracts.utils import raise_wrapped
 from .report_manager import ReportManager
 from .resource_manager import ResourceManager
+from zuper_commons.types import check_isinstance
 
 __all__ = [
     'CompmakeContext',
@@ -17,15 +18,16 @@ __all__ = [
 ]
 
 
-class QuickAppContext(object):
+class QuickAppContext:
 
-    # @contract(extra_dep='list', cc=Context)
     def __init__(self, cc: Context, qapp, parent, job_prefix,
-                 output_dir, extra_dep: List = [], resource_manager=None,
+                 output_dir, extra_dep: List = None, resource_manager=None,
                  extra_report_keys=None,
                  report_manager=None):
         check_isinstance(cc, Context)
         check_isinstance(parent, (CompmakeContext, type(None)))
+        if extra_dep is None:
+            extra_dep = []
         self.cc = cc
         # can be removed once subtask() is removed
         self._qapp = qapp
@@ -59,7 +61,7 @@ class QuickAppContext(object):
         self.branched_contexts = []
         self.branched_children = []
 
-    def __str__(self):
+    def __str__(self)->str:
         return 'CompmakeContext(%s)' % (self._job_prefix)
 
     # def all_jobs(self):
@@ -153,7 +155,7 @@ class QuickAppContext(object):
             kwargs['command_name'] = f.__name__
         return self.comp_dynamic(wrap_state_dynamic, config_state, f, *args, **kwargs)
 
-    def count_comp_invocations(self):
+    def count_comp_invocations(self)->None:
         self.n_comp_invocations += 1
         if self._parent is not None:
             self._parent.count_comp_invocations()
@@ -169,10 +171,12 @@ class QuickAppContext(object):
     def child(self, name:str, qapp=None,
               add_job_prefix=None,
               add_outdir=None,
-              extra_dep: list=[],
+              extra_dep: list=None,
               extra_report_keys=None,
               separate_resource_manager=False,
               separate_report_manager=False) -> "QuickAppContext":
+        if extra_dep is None:
+            extra_dep = []
         """
             Returns child context
 

@@ -1,30 +1,29 @@
-from contracts import contract, describe_type
 from reprep import Report
 
 __all__ = [
     'write_report_single',
 ]
 
-@contract(report=Report)
-def write_report_single(report,
+from zuper_commons.types import check_isinstance
+
+
+def write_report_single(report: Report,
                         report_nid, report_html,
                         static_dir,
                         write_pickle=False):
     from quickapp.report_manager import write_report
 
-    if not isinstance(report, Report):
-        msg = 'Expected Report, got %s.' % describe_type(report)
-        raise ValueError(msg)
+    check_isinstance(report, Report)
     report.nid = report_nid
     write_report(report, report_html, static_dir=static_dir, write_pickle=write_pickle)
-# 
-# 
+#
+#
 # def write_report_yaml(report_nid, report_job_id, key, html_filename, report_html_indexed):
-# 
+#
 #     metadata_file = os.path.splitext(html_filename)[0] + '.rm_reports.yaml'
 #     rel_filename = os.path.relpath(os.path.realpath(report_html_indexed),
 #                                    os.path.dirname(os.path.realpath(metadata_file)))
-# 
+#
 #     entry = dict(id=report_nid, desc='Automatically generated report',
 #                  code=['quickapp.rm.GeneratedReport',
 #                        {'key': dict(**key),
@@ -38,24 +37,24 @@ def write_report_single(report,
 #             pass  # XXX: race condition
 #     with open(metadata_file, 'w') as f:
 #         f.write(yaml.dump([entry], default_flow_style=False))
-# 
-# # 
+#
+# #
 # def create_job_index_dynamic(context, dirname, index_filename, html_resources_prefix, static_dir):
 #     """ Load the dynamically-generated report """
 #     if not os.path.exists(dirname):
 #         print('Reports directory not found. You should rerun this job later.')
 #         return
-# 
+#
 #     reports = get_conftools_rm_reports()
-# 
+#
 #     print(reports.dirs_read)
 #     reports.force_load(dirname)
-# 
+#
 #     id_reports = list(reports.keys())
 #     if not id_reports:
 #         print('No report found yet.')
 #         return
-# 
+#
 #     allreports = StoreResults()
 #     allreports_filename = StoreResults()
 #     for id_report in id_reports:
@@ -70,7 +69,7 @@ def write_report_single(report,
 #         else:
 #             print('Warning: yaml found for job which is not there yet.')
 #             print('     job: %s' % report_job_id)
-# 
+#
 #     from quickapp.report_manager import create_write_jobs
 #     create_write_jobs(context,
 #                       allreports_filename,

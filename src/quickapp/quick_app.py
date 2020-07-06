@@ -3,6 +3,7 @@ import shutil
 import sys
 import traceback
 from abc import abstractmethod
+from typing import List
 
 import contracts
 from compmake import CommandFailed, StorageFilesystem, read_rc_files
@@ -169,15 +170,13 @@ class QuickApp(QuickAppBase):
                 targets = cq.all_jobs()
                 todo, done, ready = cq.list_todo_targets(targets)
 
-                if not todo:
+                if not todo and  options.command is None:
                     msg = "Note: there is nothing for me to do. "
                     msg += '\n(Jobs todo: %s done: %s ready: %s)' % (len(todo), len(done), len(ready))
-                    msg += '\nThis application uses a cache system (Compmake) for the results.'
-                    msg += '\nThis means that if you call it second time with the same arguments it will not do anything.'
-                    msg += '\n'
-                    msg += '\nTo force re-doing of everything, use the option --reset.'
-                    msg += '\n'
-                    msg += '\nTo inspect what was already done, use the option --console.'
+                    msg += """\
+This application uses a cache system for the results.
+This means that if you call it second time with the same arguments,
+ and if you do not change any input, it will not do anything."""
                     self.warn(msg)
                     return 0
 
@@ -203,12 +202,14 @@ class QuickApp(QuickAppBase):
 
     @contract(args='dict(str:*)|list(str)', extra_dep='list')
     def call_recursive(self, context, child_name, cmd_class, args,
-                       extra_dep=[],
+                       extra_dep: List=None,
                        add_outdir=None,
                        add_job_prefix=None,
                        separate_resource_manager=False,
                        separate_report_manager=False,
                        extra_report_keys=None):
+        if extra_dep is None:
+            extra_dep = []
         instance = cmd_class()
         instance.set_parent(self)
         is_quickapp = isinstance(instance, QuickApp)

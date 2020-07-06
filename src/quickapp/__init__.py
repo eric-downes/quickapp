@@ -1,9 +1,8 @@
 __version__ = "6.0.2"
 
-import logging
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from zuper_commons.logs import ZLogger
+
+logger = ZLogger(__name__)
 
 # error in computation
 QUICKAPP_COMPUTATION_ERROR = 2
