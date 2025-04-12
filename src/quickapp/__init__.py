@@ -1,12 +1,17 @@
 __version__ = "6.0.2"
 
+# Flag to control whether to show warnings about missing dependencies
+# Set to False to suppress warnings, True to show them
+SHOW_DEPENDENCY_WARNINGS = False
+
 try:
     from zuper_commons.logs import ZLogger
 except ImportError:
     # Use our patched version when ZLogger is not available
     from .zuper_commons_patch import ZLogger
-    import warnings
-    warnings.warn("Using patched ZLogger implementation. Original zuper_commons.logs.ZLogger not found.")
+    if SHOW_DEPENDENCY_WARNINGS:
+        import warnings
+        warnings.warn("Using patched ZLogger implementation. Original zuper_commons.logs.ZLogger not found.")
 
 logger = ZLogger(__name__)
 
