@@ -10,7 +10,7 @@ from decent_params import DecentParams, UserError, DecentParamsUnknownArgs
 
 class ParamsTest(unittest.TestCase):
         
-    def decent_params_test0(self):
+    def test_decent_params0(self):
         
         p = DecentParams()
         p.add_float_list('floats')
@@ -27,7 +27,7 @@ class ParamsTest(unittest.TestCase):
         self.assertEqual(res.given('int1'), False)
         self.assertEqual(res['floats'], [1.2, 2.3])
         
-    def decent_params_test1(self):
+    def test_decent_params1(self):
         
         p = DecentParams()
         p.add_string('vehicle', default='x')
@@ -59,7 +59,7 @@ class ParamsTest(unittest.TestCase):
         self.assertEqual(res.ints, [1, 2, 3])
         
     @raises(UserError)
-    def decent_params_test2(self):
+    def test_decent_params2(self):
         """ Test compulsory """
         p = DecentParams()
         p.add_string('a')
@@ -68,7 +68,7 @@ class ParamsTest(unittest.TestCase):
         print(res)
         
     
-    def decent_params_test_notdefined(self):
+    def test_decent_params_notdefined(self):
         p = DecentParams()
         p.add_string('vehicle', default='x')
         

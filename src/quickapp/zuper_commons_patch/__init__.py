@@ -29,6 +29,10 @@ class ZLogger:
     def warning(self, msg, *args, **kwargs):
         """Log a warning message."""
         self.logger.warning(msg, *args, **kwargs)
+        
+    def warn(self, msg, *args, **kwargs):
+        """Alias for warning - for backwards compatibility with Python 2 code."""
+        self.warning(msg, *args, **kwargs)
     
     def error(self, msg, *args, **kwargs):
         """Log an error message."""

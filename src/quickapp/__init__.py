@@ -64,6 +64,10 @@ QUICKAPP_COMPUTATION_ERROR = 2
 QUICKAPP_USER_ERROR = 1
 
 from .utils import col_logging
+from .utils import patch_nose_importer
+
+# Patch nose.importer to work with Python 3.12
+patch_nose_importer()
 
 from .quick_app_base import *
 from .quick_multi_app import *
