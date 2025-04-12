@@ -188,6 +188,66 @@ pytest and nose discover tests differently. If you encounter issues:
 - Change test methods to start with `test_`
 - Remove nose-specific `__init__.py` files
 
+### 2.3 Converting Assertions
+
+One of the most significant changes in moving from unittest/nose to pytest is the assertion style:
+
+#### Assertion Style Conversion
+
+```python
+# unittest/nose style
+self.assertEqual(a, b)
+self.assertNotEqual(a, b)
+self.assertTrue(condition)
+self.assertFalse(condition)
+self.assertIn(item, container)
+self.assertIs(a, b)
+self.assertIsNone(obj)
+self.assertRaises(Exception, func, *args, **kwargs)
+
+# pytest style
+assert a == b
+assert a != b
+assert condition
+assert not condition
+assert item in container
+assert a is b
+assert obj is None
+with pytest.raises(Exception):
+    func(*args, **kwargs)
+```
+
+#### Custom Assertions
+
+For custom assertions in a base class:
+
+```python
+# unittest/nose style
+class MyTestBase(unittest.TestCase):
+    def assertCustomCondition(self, obj, condition):
+        self.assertTrue(condition(obj), f"Object {obj} doesn't meet condition")
+
+# pytest style
+class MyTestBase:
+    def assert_custom_condition(self, obj, condition):
+        assert condition(obj), f"Object {obj} doesn't meet condition"
+```
+
+#### Error Messages
+
+Pytest assertions can include custom failure messages:
+
+```python
+# Simple message
+assert result == expected, "The calculation failed"
+
+# Formatted message
+assert result == expected, f"Expected {expected}, but got {result}"
+
+# Computed message
+assert result == expected, f"Calculation with input={input_value} failed: expected={expected}, got={result}"
+```
+
 ## Step 3: Addressing Compatibility Issues
 
 During migration, you may encounter Python compatibility issues beyond the nose framework itself.
@@ -259,7 +319,52 @@ else:
   - Replace nose-specific helpers with pytest equivalents (`@pytest.mark.xfail` instead of `@expected_failure`)
   - Use conditional imports in helper modules to work with both frameworks during migration
 
-### 3.2 Running Tests Standalone
+### 3.2 Handling Non-Standard Test Methods
+
+In many older codebases, test methods might not follow the `test_*` naming convention expected by pytest:
+
+#### Legacy Test Functions
+
+```python
+# Methods that don't start with test_
+def some_test_case(self):
+    ...
+    
+def validate_something(self):
+    ...
+```
+
+There are several approaches to handle these:
+
+1. **Rename the methods** (preferred for long-term maintenance):
+   ```python
+   def test_some_case(self):  # Renamed from some_test_case
+       ...
+   ```
+
+2. **Use pytest.mark.parametrize for test functions**:
+   ```python
+   @pytest.mark.parametrize("test_function", [
+       some_test_case,
+       validate_something
+   ])
+   def test_runner(self, test_function):
+       test_function(self)  # Run the function 
+   ```
+
+3. **Create a pytest collection hook** in conftest.py for advanced customization:
+   ```python
+   def pytest_collection_modifyitems(items):
+       for item in list(items):
+           # Custom logic to include non-standard test methods
+           if hasattr(item, 'cls') and item.cls is not None:
+               for name in dir(item.cls):
+                   if '_test' in name:  # Any method with _test in the name
+                       # Custom logic to add the test
+                       pass
+   ```
+
+### 3.3 Running Tests Standalone
 
 Create a way to run individual tests without depending on the test discovery system:
 
@@ -474,7 +579,32 @@ Migrating from nose to pytest is a methodical process that can be done increment
 
 6. **Keep the Original Files**: During migration, keep both sets of files until you're confident everything works.
 
+7. **Git Operations**: Use `git mv` rather than regular file moves to preserve file history during migration.
+
+8. **Import Path Updates**: Pay careful attention to imports when renaming files - this is a common source of errors after migration.
+
+9. **String Type Checking**: Watch out for code that uses string type names with `isinstance()` - this pattern needs special handling in Python 3.
+
+10. **Fixture Scope Consideration**: Consider the appropriate scope for fixtures (function, class, module, session) to optimize test performance.
+
 By following this approach, we successfully migrated a complex test suite with multiple interdependencies, ensuring compatibility with Python 3.12 while improving maintainability for the future.
+
+### Additional Recommendations for Large Projects
+
+1. **Establish Testing Standards**:
+   - Define pytest-specific coding standards for your team
+   - Create a style guide for fixture usage and test organization
+   - Set up pre-commit hooks to enforce consistent test formatting
+
+2. **Performance Optimization**:
+   - Consider using pytest-xdist for parallel test execution
+   - Use pytest-cov to ensure adequate test coverage
+   - Profile slow tests and optimize them with better fixtures
+
+3. **CI/CD Integration**:
+   - Update CI/CD pipelines to use pytest's XML output for better reporting
+   - Configure test result visualization in your CI environment
+   - Set up automated test failure notifications
 
 ---
 
