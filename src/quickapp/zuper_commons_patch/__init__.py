@@ -80,3 +80,31 @@ def duration_compact(seconds):
         m = int(seconds / 60)
         s = seconds - m * 60
         return "%d h %d m %.1f s" % (h, m, s)
+
+# Indentation function
+def indent(text, prefix, first=None):
+    """
+    Indents a string with the given prefix.
+    This is a reimplementation of indent from zuper_commons.text.
+    
+    Args:
+        text: The string to indent
+        prefix: The prefix to add to each line
+        first: An optional prefix for the first line (if None, uses prefix)
+    
+    Returns:
+        The indented string
+    """
+    if first is None:
+        first = prefix
+        
+    lines = text.split('\n')
+    if not lines:
+        return ''
+        
+    s = first + lines[0]
+    
+    for i in range(1, len(lines)):
+        s += '\n' + prefix + lines[i]
+        
+    return s
