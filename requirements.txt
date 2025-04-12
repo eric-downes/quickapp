@@ -3,4 +3,5 @@ RepRep==2.11.0
 DecentLogs==1.4.0
 compmake==3.6.8
 ConfTools==1.9.7
+pytest>=7.0.0
 

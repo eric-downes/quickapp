@@ -1,38 +1,53 @@
-from nose.tools import istest
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Pytest version of test_dynamic_3_qa.py.
+Tests multi-level nested dynamic job creation with context iteration.
+"""
 
+import pytest
 from quickapp import QuickApp, iterate_context_names
 
-from .quickappbase import QuickappTest
+from .quickappbase import QuickappTestBase
 
 
 def f(name):
+    """Simple test function that returns its input."""
     print(name)
     return name
 
+
 def define_jobs2(context, id_name):
+    """Define a job in the given context with the given id_name."""
     context.comp(f, id_name)
 
+
 def define_jobs1(context, id_name):
+    """Define a dynamic job in the given context with the given id_name."""
     context.comp_dynamic(define_jobs2, id_name)
 
+
 class QuickAppDemoChild3(QuickApp):
-
+    """Demo QuickApp that creates multi-level nested dynamic jobs in multiple contexts."""
+    
     def define_options(self, params):
+        """Define command line options."""
         pass
-
+    
     def define_jobs_context(self, context):
+        """Define dynamic jobs in multiple nested contexts."""
         names1 = ['a', 'b']
         names2 = ['m', 'n']
         for c1, name1 in iterate_context_names(context, names1):
             for c2, name2 in iterate_context_names(c1, names2):
                 c2.comp_dynamic(define_jobs1, name1 + name2)
 
-@istest
-class TestDynamic3(QuickappTest):
 
-    howmany = None  # used by cases()
+class TestDynamic3(QuickappTestBase):
+    """Test multi-level nested dynamic job creation in QuickApp."""
 
     def test_dynamic1(self):
+        """Test running QuickAppDemoChild3 with nested dynamic jobs."""
         self.run_quickapp(qapp=QuickAppDemoChild3, cmd='ls')
         
         self.assert_cmd_success('check_consistency')
@@ -89,3 +104,8 @@ class TestDynamic3(QuickappTest):
                                      ])
         self.assert_cmd_success('details a-m-f')
         self.assert_defined_by('a-m-f', ['root', 'a-m-define_jobs1', 'a-m-define_jobs2'])
+
+
+if __name__ == "__main__":
+    # Run this test file directly with pytest
+    pytest.main(["-xvs", __file__])

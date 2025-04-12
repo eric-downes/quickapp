@@ -1,31 +1,44 @@
-from nose.tools import istest
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Pytest version of test_reportmanager_1.py.
+Tests the report manager functionality of quickapp.
+"""
 
+import pytest
 from quickapp import QuickApp, iterate_context_names
 from reprep import Report
 
-from .quickappbase import QuickappTest
+from .quickappbase import QuickappTestBase
 
 
 def report_example1(param1, param2):
+    """Create an example report with the given parameters."""
     r = Report()
     r.text('type', 'This is one report')
-    r.text('param1', '%s' % param1)
-    r.text('param2', '%s' % param2)
+    r.text('param1', f'{param1}')
+    r.text('param2', f'{param2}')
     return r
+
 
 def report_example2(param1, param2):
+    """Create another example report with the given parameters."""
     r = Report()
     r.text('type', 'This is another report')
-    r.text('param1', '%s' % param1)
-    r.text('param2', '%s' % param2)
+    r.text('param1', f'{param1}')
+    r.text('param2', f'{param2}')
     return r
 
+
 class QuickAppDemoReport(QuickApp):
-
+    """Demo QuickApp that creates and manages reports with different parameters."""
+    
     def define_options(self, params):
+        """Define command line options."""
         pass
-
+    
     def define_jobs_context(self, context):
+        """Define jobs that create reports with different parameters."""
         param1s = ['a', 'b']
         param2s = [1, 2]
         
@@ -37,13 +50,13 @@ class QuickAppDemoReport(QuickApp):
                 c2.add_report(r, 'report_example1')
                 r = c2.comp(report_example2, param1=param1, param2=param2)
                 c2.add_report(r, 'report_example2')
-        
 
 
-@istest
-class CompappTest1(QuickappTest):
-
-    def compapp_test1(self):
+class TestReportManager(QuickappTestBase):
+    """Test the report manager functionality in QuickApp."""
+    
+    def test_report_manager(self):
+        """Test running QuickAppDemoReport with report generation."""
         self.run_quickapp(QuickAppDemoReport, cmd='ls')
         print('---- now make')
         self.assert_cmd_success('make')
@@ -53,5 +66,9 @@ class CompappTest1(QuickappTest):
         self.assert_cmd_success('ls')
         self.assert_cmd_success('make')
         self.assert_cmd_success('ls')
-#         self.assert_cmd_success('make')
+        # self.assert_cmd_success('make')
 
+
+if __name__ == "__main__":
+    # Run this test file directly with pytest
+    pytest.main(["-xvs", __file__])
